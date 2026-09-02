@@ -18,21 +18,36 @@ cat > dist/_headers <<'EOF'
 EOF
 
 cat > dist/_redirects <<'EOF'
+/event /event.html 200
 /event/* /event.html 200
+/person /person.html 200
 /person/* /person.html 200
+/player /person.html 200
 /player/* /person.html 200
+/athlete /person.html 200
 /athlete/* /person.html 200
+/manager /person.html 200
 /manager/* /person.html 200
 /football /sport.html 200
+/football/* /sport.html 200
 /basketball /sport.html 200
+/basketball/* /sport.html 200
 /tennis /sport.html 200
+/tennis/* /sport.html 200
 /running /sport.html 200
+/running/* /sport.html 200
 /live /hub.html 200
+/live/* /hub.html 200
 /sports /hub.html 200
+/sports/* /hub.html 200
 /news /hub.html 200
+/news/* /hub.html 200
 /community /hub.html 200
+/community/* /hub.html 200
 /wear /hub.html 200
+/wear/* /hub.html 200
 /contact /hub.html 200
+/contact/* /hub.html 200
 EOF
 
 echo "UltraWear Cloudflare build complete: dist/"
