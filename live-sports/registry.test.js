@@ -37,3 +37,27 @@ test('registry ingests and updates the same event idempotently', () => {
   assert.equal(updated.changed, true);
   assert.deepEqual(registry.getEvent('event-1').score, { home: 1, away: 0 });
 });
+
+test('canonical event carries a provider-normalized moment without inventing one', () => {
+  const event = createSportEvent({
+    id: 'event-moment',
+    sport: 'football',
+    competition: 'League',
+    home: { id: 'home', name: 'Home' },
+    away: { id: 'away', name: 'Away' },
+    startsAt: '2026-09-01T18:00:00Z',
+    status: 'live',
+    moment: { type: 'goal', team: 'home', verified: true, timestamp: '2026-09-01T18:12:00Z' },
+  });
+  assert.deepEqual(event.moment, { type: 'goal', team: 'home', verified: true, timestamp: '2026-09-01T18:12:00Z' });
+  assert.equal(createSportEvent({
+    id: 'event-no-moment', sport: 'football', competition: 'League',
+    home: { id: 'home', name: 'Home' }, away: { id: 'away', name: 'Away' },
+    startsAt: '2026-09-01T18:00:00Z', status: 'live',
+  }).moment, null);
+  assert.throws(() => createSportEvent({
+    id: 'event-invalid-moment', sport: 'football', competition: 'League',
+    home: { id: 'home', name: 'Home' }, away: { id: 'away', name: 'Away' },
+    startsAt: '2026-09-01T18:00:00Z', status: 'live', moment: { verified: true },
+  }), /Invalid live sport moment/);
+});

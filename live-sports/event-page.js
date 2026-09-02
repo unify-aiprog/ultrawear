@@ -17,6 +17,7 @@ export function createEventPageModel(event, { community = {}, related = [], now 
     venue: event.venue,
     participants: [event.home, event.away],
     score: event.score,
+    moment: event.moment ?? null,
     freshness,
     community: {
       reactions: community.reactions ?? 0,
