@@ -3,21 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Person | UltraWear</title>
+  <meta name="description" content="UltraWear FC sports person profile." />
+  <meta name="theme-color" content="#11110f" />
+  <title>Person | UltraWear FC</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="live-sports-ui/person-page.css">
 </head>
 <body>
+  <a class="skip-link" href="#person-app">Skip to content</a>
   <header class="site-header">
-    <a class="brand" href="/">UltraWear</a>
-    <nav aria-label="Primary">
-      <a href="/">Home</a>
-    </nav>
+    <a class="brand" href="/" aria-label="UltraWear FC home"><span>ULTRAWEAR</span><b>FC</b></a>
+    <nav aria-label="Main navigation"><a href="/#live">Live</a><a href="/#sports">Sports</a><a href="/#news">News</a><a href="/#community">Community</a><a href="/#wear">UltraWear</a></nav>
+    <button class="menu" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-navigation">☰</button>
+    <div class="mobile-nav" id="mobile-navigation" aria-label="Mobile navigation"><a href="/#live">Live</a><a href="/#sports">Sports</a><a href="/#news">News</a><a href="/#community">Community</a><a href="/#wear">UltraWear</a></div>
   </header>
   <main id="person-app" class="person-page" aria-live="polite">
     <p>Loading profile…</p>
   </main>
-  <footer>FC = FOR COMMUNITY</footer>
+  <footer><div class="brand"><span>ULTRAWEAR</span><b>FC</b></div><p>FC = FOR COMMUNITY.</p><small>© 2026 UltraWear FC. Built for the culture.</small></footer>
+  <script src="app.js"></script>
   <script type="module" src="live-sports-ui/person-page-render.js"></script>
 </body>
 </html>
