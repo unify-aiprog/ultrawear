@@ -2,10 +2,12 @@
 
 import { normalizeSourceEvent } from './adapter.js';
 import { updateEvent } from './events.js';
+import { createAlertCandidates } from './retention.js';
 
-export function createSourceRegistry() {
+export function createSourceRegistry({ follows = [] } = {}) {
   const adapters = new Map();
   const events = new Map();
+  let activeFollows = [...follows];
 
   return Object.freeze({
     register(adapter) {
@@ -17,6 +19,13 @@ export function createSourceRegistry() {
     getSource(id) {
       return adapters.get(id) ?? null;
     },
+    setFollows(nextFollows = []) {
+      activeFollows = [...nextFollows];
+      return [...activeFollows];
+    },
+    listFollows() {
+      return [...activeFollows];
+    },
     ingest(sourceId, payload, context = {}) {
       const adapter = adapters.get(sourceId);
       if (!adapter) throw new Error(`Unknown source: ${sourceId}`);
@@ -24,7 +33,16 @@ export function createSourceRegistry() {
       const existing = events.get(incoming.id);
       const event = existing ? updateEvent(existing, incoming) : incoming;
       events.set(event.id, event);
-      return { event, created: !existing, changed: !existing || JSON.stringify(existing) !== JSON.stringify(event) };
+      const changed = !existing || JSON.stringify(existing) !== JSON.stringify(event);
+      const alertCandidates = changed
+        ? createAlertCandidates({
+            previous: existing,
+            current: event,
+            follows: activeFollows,
+            createdAt: context.createdAt,
+          })
+        : [];
+      return { event, created: !existing, changed, alertCandidates };
     },
     getEvent(id) {
       return events.get(id) ?? null;
