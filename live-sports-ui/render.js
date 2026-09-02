@@ -8,6 +8,30 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function personId(person) {
+  if (!person) return '';
+  if (typeof person === 'string') return person;
+  return person.id ?? person.personId ?? person.playerId ?? person.athleteId ?? person.managerId ?? '';
+}
+
+function personType(person, fallback = 'person') {
+  if (!person || typeof person === 'string') return fallback;
+  return person.type ?? person.entityType ?? (person.managerId ? 'manager' : person.athleteId ? 'athlete' : person.playerId ? 'player' : fallback);
+}
+
+function personLabel(person, fallback = '') {
+  if (!person) return fallback;
+  if (typeof person === 'string') return person;
+  return person.name ?? person.fullName ?? person.displayName ?? fallback;
+}
+
+function personTrigger(person, label = '', className = 'person-trigger') {
+  const id = personId(person);
+  if (!id) return escapeHtml(label || personLabel(person));
+  const type = personType(person);
+  return `<button type="button" class="${className}" data-person-id="${escapeHtml(id)}" data-person-type="${escapeHtml(type)}">${escapeHtml(label || personLabel(person))}</button>`;
+}
+
 function teamBadge(code) {
   const visual = getTeamVisual(code);
   const logo = getTeamLogo(code);
@@ -29,6 +53,13 @@ function renderMoment(moment) {
   </div>`;
 }
 
+function renderPeople(match) {
+  const people = Array.isArray(match.people) ? match.people : [];
+  if (!people.length) return '';
+  const triggers = people.map((person) => personTrigger(person)).filter(Boolean);
+  return triggers.length ? `<div class="match-people" aria-label="People in this event">${triggers.join('')}</div>` : '';
+}
+
 export function renderTeamMatchCard(match) {
   const home = getTeamVisual(match.home);
   const away = getTeamVisual(match.away);
@@ -42,6 +73,7 @@ export function renderTeamMatchCard(match) {
   const eventIdData = match.id ? ` data-event-id="${escapeHtml(match.id)}"` : '';
   const eventId = encodeURIComponent(match.id ?? '');
   const score = match.score ? `<div class="card-score"><b>${escapeHtml(match.score.home)}</b><span>—</span><b>${escapeHtml(match.score.away)}</b></div>` : '';
+  const people = renderPeople(match);
 
   return `
     <a class="live-card-link" href="/event/${eventId}" aria-label="Open ${escapeHtml(home.name)} versus ${escapeHtml(away.name)} event page">
@@ -55,6 +87,7 @@ export function renderTeamMatchCard(match) {
           ${score || '<div class="versus"><span>VS</span></div>'}
           <div class="team team-away" style="${teamStyle(match.away)}">${teamBadge(match.away)}<strong>${escapeHtml(match.away)}</strong></div>
         </div>
+        ${people}
         ${moment}
         <div class="match-meta"><span>${note}</span><span>${escapeHtml(match.meta ?? 'Source pending')} ↗</span></div>
         <div class="card-sweep" aria-hidden="true"></div><div class="momentum-line" aria-hidden="true"><span></span></div>
