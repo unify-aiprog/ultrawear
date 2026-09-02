@@ -13,7 +13,7 @@ export function createDurableIngestionCoordinator({ scheduler, ingest, now = () 
       for (const item of due) {
         if (!item?.sourceId) continue;
         const claimed = typeof scheduler.claim === 'function'
-          ? await scheduler.claim(item.sourceId, at, leaseSeconds)
+          ? await scheduler.claim(item.sourceId, { at, leaseSeconds })
           : true;
         if (!claimed) {
           results.push({ sourceId: item.sourceId, ok: false, claimed: false, skipped: true });
@@ -31,22 +31,11 @@ export function createDurableIngestionCoordinator({ scheduler, ingest, now = () 
             minimum: item.context?.minimum ?? 5,
             maximum: item.context?.maximum ?? 3600,
           });
-          await scheduler.schedule(item.sourceId, {
-            ...item.context,
-            eventStatus,
-            sourceStatus,
-            lastRunAt: new Date(now()).toISOString(),
-            lastError: result?.ok ? null : (result?.error ?? 'ingestion failed'),
-          }, delaySeconds);
+          await scheduler.schedule(item.sourceId, { ...item.context, eventStatus, sourceStatus, lastRunAt: new Date(now()).toISOString(), lastError: result?.ok ? null : (result?.error ?? 'ingestion failed') }, delaySeconds);
           results.push({ sourceId: item.sourceId, ok: Boolean(result?.ok), claimed: true, delaySeconds, result });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
-          await scheduler.schedule(item.sourceId, {
-            ...item.context,
-            sourceStatus: 'degraded',
-            lastRunAt: new Date(now()).toISOString(),
-            lastError: message,
-          }, nextPollDelay({ eventStatus: item.context?.eventStatus ?? 'scheduled', sourceStatus: 'degraded', base: item.context?.baseDelay ?? baseDelay }));
+          await scheduler.schedule(item.sourceId, { ...item.context, sourceStatus: 'degraded', lastRunAt: new Date(now()).toISOString(), lastError: message }, nextPollDelay({ eventStatus: item.context?.eventStatus ?? 'scheduled', sourceStatus: 'degraded', base: item.context?.baseDelay ?? baseDelay }));
           results.push({ sourceId: item.sourceId, ok: false, claimed: true, error: message });
         }
       }
