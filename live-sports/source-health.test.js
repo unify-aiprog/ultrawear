@@ -18,6 +18,15 @@ test('repeated failures move a source offline', () => {
   assert.equal(tracker.record({ sourceId: 'demo', eventStatus: 'live', observedAt: iso(5), ok: false }).status, 'offline');
 });
 
+test('restored failure count survives tracker restart', () => {
+  const first = createSourceHealthTracker({ now: () => NOW });
+  first.record({ sourceId: 'demo', eventStatus: 'live', observedAt: iso(5), ok: false });
+  first.record({ sourceId: 'demo', eventStatus: 'live', observedAt: iso(5), ok: false });
+  const second = createSourceHealthTracker({ now: () => NOW });
+  second.restore({ ...first.get('demo'), failures: 2 });
+  assert.equal(second.record({ sourceId: 'demo', eventStatus: 'live', observedAt: iso(5), ok: false }).status, 'offline');
+});
+
 test('polling is faster for live events and backs off unhealthy sources', () => {
   assert.equal(nextPollDelay({ eventStatus: 'live', sourceStatus: 'healthy', base: 40 }), 10);
   assert.equal(nextPollDelay({ eventStatus: 'live', sourceStatus: 'degraded', base: 40 }), 20);
