@@ -22,22 +22,37 @@ const MOMENT_META = Object.freeze({
   transfer: ['TRANSFER', 'high'], manager_sacked: ['MANAGER SACKED', 'high'], manager_appointed: ['MANAGER APPOINTED', 'high'], retirement: ['RETIREMENT', 'high'], award: ['AWARD', 'medium'], disqualification: ['DISQUALIFIED', 'high'],
 });
 
+const TYPE_ALIASES = Object.freeze({ card: 'yellow_card', fulltime: 'full_time', '3pt': 'three_pointer', three_pointer: 'three_pointer' });
+
+function parseMinute(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  const match = String(value ?? '').match(/(\d{1,3})(?:\+\d+)?\s*'/);
+  return match ? Number(match[1]) : null;
+}
+
 export function normalizeMoment(input = {}) {
-  const type = String(input.type ?? '').trim().toLowerCase();
+  const rawType = String(input.type ?? '').trim().toLowerCase();
+  const type = TYPE_ALIASES[rawType] ?? rawType;
   const meta = MOMENT_META[type];
   if (!meta) return null;
+  const occurredAt = input.occurredAt ?? input.timestamp ?? null;
+  const displayTime = input.displayTime ?? input.time ?? (input.minute != null ? `${input.minute}'` : null);
+  const minute = input.minute ?? parseMinute(displayTime);
   return Object.freeze({
     id: input.id ?? null,
     type,
     sport: String(input.sport ?? '').trim(),
     severity: input.severity ?? meta[1],
-    label: input.label ?? meta[0],
+    label: input.label ?? input.title ?? meta[0],
+    detail: input.detail ?? input.description ?? null,
     team: input.team ?? null,
     player: input.player ?? null,
     manager: input.manager ?? null,
-    timestamp: input.timestamp ?? null,
-    occurredAt: input.occurredAt ?? input.timestamp ?? null,
-    minute: input.minute ?? null,
+    people: Array.isArray(input.people) ? input.people : [],
+    timestamp: input.timestamp ?? occurredAt,
+    occurredAt,
+    displayTime,
+    minute,
     verified: input.verified === true,
     intensity: input.intensity ?? meta[1],
     animation: input.animation ?? { key: type.replace(/_/g, '-'), replayable: true },
