@@ -49,7 +49,52 @@ function normalizeMoments(event) {
   }] : [];
 }
 
-function renderEvent(event, { fallback = false } = {}) {
+function verificationClass(record) {
+  return record?.verification === 'conflicted' ? 'conflicted'
+    : record?.verification === 'verified' ? 'verified'
+    : record?.verification === 'corroborated' ? 'corroborated'
+    : 'unverified';
+}
+
+function verificationLabel(record) {
+  if (!record) return 'Building signal';
+  if (record.verification === 'conflicted') return 'Conflicted';
+  if (record.verification === 'verified') return 'Verified';
+  if (record.verification === 'corroborated') return 'Corroborated';
+  return 'Unverified';
+}
+
+function verificationSummary(records) {
+  const latest = new Map();
+  for (const record of records || []) {
+    if (!latest.has(record.field)) latest.set(record.field, record);
+  }
+  const ordered = [...latest.values()];
+  if (!ordered.length) return '<span class="verification-chip neutral">Building signal</span>';
+  return ordered.map((record) => `<span class="verification-chip ${verificationClass(record)}"><b>${esc(verificationLabel(record))}</b><small>${esc(record.field)}</small></span>`).join('');
+}
+
+function formatValue(value) {
+  if (value == null) return '—';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+function verificationPanel(records, loading = false) {
+  if (loading) return '<section class="event-panel verification-panel" id="verification"><div class="verification-heading"><div><p class="eyebrow">CANONICAL DATA</p><h2>Verification</h2></div></div><p>Loading provenance…</p></section>';
+  const items = Array.isArray(records) ? records : [];
+  if (!items.length) return '<section class="event-panel verification-panel" id="verification"><div class="verification-heading"><div><p class="eyebrow">CANONICAL DATA</p><h2>Verification</h2></div></div><p>No verification history has been published for this event yet.</p></section>';
+  const latest = new Map();
+  for (const record of items) if (!latest.has(record.field)) latest.set(record.field, record);
+  const summary = [...latest.values()].map((record) => `<span class="verification-chip ${verificationClass(record)}"><b>${esc(verificationLabel(record))}</b><small>${esc(record.field)}</small></span>`).join('');
+  return `<section class="event-panel verification-panel" id="verification">
+    <div class="verification-heading"><div><p class="eyebrow">CANONICAL DATA</p><h2>Verification</h2></div><div class="verification-summary">${summary}</div></div>
+    <p class="verification-intro">Every canonical fact keeps its source observations and transition history.</p>
+    <div class="verification-history">${items.map((record) => `<details class="verification-record"><summary><span class="verification-chip ${verificationClass(record)}">${esc(verificationLabel(record))}</span><strong>${esc(record.field)}</strong><time>${esc(record.observedAt)}</time></summary><div class="verification-detail"><p><b>${esc(record.action)}</b>${record.reason ? ` · ${esc(record.reason)}` : ''}</p><dl><div><dt>Previous</dt><dd>${esc(formatValue(record.previousValue))}</dd></div><div><dt>Current</dt><dd>${esc(formatValue(record.value))}</dd></div><div><dt>Previous verification</dt><dd>${esc(record.previousVerification || '—')}</dd></div><div><dt>Source</dt><dd>${esc(record.sourceId)}</dd></div><div><dt>Sources supporting fact</dt><dd>${esc((record.sources || []).join(', ') || '—')}</dd></div></dl></div></details>`).join('')}</div>
+  </section>`;
+}
+
+function renderEvent(event, { fallback = false, verificationRecords = [] } = {}) {
   const label = statusLabel(event);
   const moments = normalizeMoments(event);
   const stats = normalizeStats(event);
@@ -71,11 +116,13 @@ function renderEvent(event, { fallback = false } = {}) {
         </div>
         <div class="event-meta"><span>📍 ${esc(venue || 'Venue TBC')}</span><span>Data source: ${esc(source || 'Awaiting verified source')}</span><span>Last updated: ${esc(event.updatedAt || 'Not yet')}</span></div>
         <div class="event-live-note">${fallback ? 'Preview event: canonical event store unavailable in this environment.' : (event.status === 'live' || event.status === 'halftime' ? 'Live data is read from the canonical event store. This page refreshes while the event is active.' : 'This event URL persists after the event and becomes the historical match centre automatically.')}</div>
+        <div class="event-verification-strip" aria-label="Canonical verification status">${verificationSummary(verificationRecords)}</div>
       </section>
-      <nav class="event-nav" aria-label="Event sections"><a href="#timeline">Timeline</a><a href="#stats">Stats</a><a href="#community">Community</a><a href="#related">Related</a></nav>
+      <nav class="event-nav" aria-label="Event sections"><a href="#timeline">Timeline</a><a href="#stats">Stats</a><a href="#verification">Verification</a><a href="#community">Community</a><a href="#related">Related</a></nav>
       <div class="event-grid">
         <section class="event-panel" id="timeline"><h2>Live moments</h2>${moments.length ? moments.map(m => `<div class="event-moment"><time>${esc(m.time || '')}</time><div><strong>${esc(m.title || m.type || 'Match moment')}</strong><span>${esc(m.detail || '')}</span></div></div>`).join('') : '<p>No moments published yet.</p>'}</section>
         <section class="event-panel" id="stats"><h2>Match stats</h2>${stats.length ? `<table class="event-stats"><tbody>${stats.map(s => `<tr><td>${esc(s[0])}</td><td>${esc(s[1])}</td><td>${esc(s[2])}</td></tr>`).join('')}</tbody></table>` : '<p>Stats will appear when the verified provider supplies them.</p>'}</section>
+        ${verificationPanel(verificationRecords)}
         <section class="event-panel" id="community"><h2>For community</h2><p>Reactions, questions, polls, predictions and follows belong to the event itself — not to a temporary live page.</p></section>
         <section class="event-panel" id="related"><h2>Related</h2><p>Team stories, competition context, player profiles and post-match content will attach here through Content Core.</p></section>
       </div>
@@ -83,25 +130,27 @@ function renderEvent(event, { fallback = false } = {}) {
 }
 
 async function fetchCanonicalEvent() {
-  const response = await fetch(`/api/events/${encodeURIComponent(id)}`, {
-    headers: { accept: 'application/json' },
-    cache: 'no-store',
-  });
+  const response = await fetch(`/api/events/${encodeURIComponent(id)}`, { headers: { accept: 'application/json' }, cache: 'no-store' });
   if (!response.ok) return null;
   const payload = await response.json();
   return payload?.event || null;
+}
+
+async function fetchVerification() {
+  const response = await fetch(`/api/events/${encodeURIComponent(id)}/verification?limit=50`, { headers: { accept: 'application/json' }, cache: 'no-store' });
+  if (!response.ok) return [];
+  const payload = await response.json();
+  return Array.isArray(payload?.records) ? payload.records.reverse() : [];
 }
 
 async function refresh({ initial = false } = {}) {
   if (initial) app.innerHTML = '<div class="event-loading">Loading event centre…</div>';
 
   try {
-    const event = await fetchCanonicalEvent();
+    const [event, verificationRecords] = await Promise.all([fetchCanonicalEvent(), fetchVerification()]);
     if (event) {
-      renderEvent(event);
-      if (event.status === 'live' || event.status === 'halftime') {
-        window.setTimeout(() => refresh(), 10000);
-      }
+      renderEvent(event, { verificationRecords });
+      if (event.status === 'live' || event.status === 'halftime') window.setTimeout(() => refresh(), 10000);
       return event;
     }
   } catch (_) {
@@ -111,15 +160,11 @@ async function refresh({ initial = false } = {}) {
   const demo = EVENT_DEMO_DATA[id];
   if (demo && initial) {
     renderEvent(demo, { fallback: true });
-    if (demo.status === 'live' || demo.status === 'halftime') {
-      window.setTimeout(() => refresh(), 10000);
-    }
+    if (demo.status === 'live' || demo.status === 'halftime') window.setTimeout(() => refresh(), 10000);
     return demo;
   }
 
-  if (initial) {
-    app.innerHTML = `<div class="event-empty"><h1>Event not found</h1><p>This event has not been published to the canonical event store.</p><a href="/">← Back to UltraWear FC</a></div>`;
-  }
+  if (initial) app.innerHTML = `<div class="event-empty"><h1>Event not found</h1><p>This event has not been published to the canonical event store.</p><a href="/">← Back to UltraWear FC</a></div>`;
   return null;
 }
 
