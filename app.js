@@ -69,3 +69,32 @@ document.querySelectorAll('a[href^="#"]').forEach((link) => {
     if (target && target.id !== 'top') target.setAttribute('tabindex', '-1');
   });
 });
+
+// Anonymous, aggregate interest signals. No account, IP, or browsing history is sent.
+// A local cooldown prevents a single open/click from repeatedly inflating a trend.
+const interestCooldown = 10 * 60 * 1000;
+const interestKey = (id) => `uw-interest:${id}`;
+
+document.addEventListener('click', (event) => {
+  const target = event.target.closest?.('[data-interest-id]');
+  if (!target) return;
+  const entityId = decodeURIComponent(target.dataset.interestId || '');
+  const entityType = decodeURIComponent(target.dataset.interestType || 'entity');
+  const label = decodeURIComponent(target.dataset.interestLabel || entityId);
+  if (!entityId) return;
+
+  try {
+    const last = Number(localStorage.getItem(interestKey(entityId)) || 0);
+    if (Date.now() - last < interestCooldown) return;
+    localStorage.setItem(interestKey(entityId), String(Date.now()));
+  } catch {
+    // Privacy-restricted browsers simply skip the signal.
+  }
+
+  fetch('/api/trending', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({ entityId, entityType, label }),
+    keepalive: true,
+  }).catch(() => {});
+});
