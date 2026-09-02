@@ -1,0 +1,1 @@
+Continuous ingestion health uses deterministic freshness windows and failure counts. This operational layer informs polling cadence; it does not mark sports facts as verified. Fact verification remains handled by observations and cross-source reconciliation.
