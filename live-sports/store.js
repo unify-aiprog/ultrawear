@@ -19,12 +19,18 @@ export function createEventStore({ now = () => new Date().toISOString(), maxHist
   const events = new Map();
   const history = new Map();
 
+  function remove(id) {
+    const existed = events.delete(id);
+    history.delete(id);
+    return existed;
+  }
+
   return Object.freeze({
     upsert(event, recordedAt = now()) {
       if (!event?.id) throw new TypeError('Event id is required');
       if (!event.startsAt) throw new TypeError('Event startsAt is required');
       const previous = events.get(event.id) ?? null;
-      const version = (history.get(event.id)?.length ?? 0) + 1;
+      const version = (history.get(event.id)?.at(-1)?.version ?? 0) + 1;
       const next = cloneEvent({ ...event, updatedAt: event.updatedAt ?? recordedAt });
       events.set(event.id, next);
       const versions = history.get(event.id) ?? [];
@@ -49,20 +55,16 @@ export function createEventStore({ now = () => new Date().toISOString(), maxHist
         .map(cloneEvent);
     },
 
-    remove(id) {
-      const existed = events.delete(id);
-      history.delete(id);
-      return existed;
-    },
+    remove,
 
     prune({ now: observedAt = now(), maxAgeMs = 86400000 } = {}) {
       if (!Number.isFinite(maxAgeMs) || maxAgeMs < 0) throw new TypeError('maxAgeMs must be non-negative');
       let removed = 0;
+      const observedMs = Date.parse(observedAt);
+      if (!Number.isFinite(observedMs)) throw new TypeError('Invalid observedAt');
       for (const event of events.values()) {
         const updated = Date.parse(event.updatedAt ?? event.startsAt);
-        if (Number.isFinite(updated) && Date.parse(observedAt) - updated > maxAgeMs) {
-          if (this.remove(event.id)) removed += 1;
-        }
+        if (Number.isFinite(updated) && observedMs - updated > maxAgeMs && remove(event.id)) removed += 1;
       }
       return removed;
     },
