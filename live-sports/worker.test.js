@@ -53,7 +53,7 @@ test('worker persists changed events, discovery index, team histories, and playe
   const teamHistory = memoryKv();
   const playerHistory = memoryKv();
   const worker = createLiveSportsWorker({
-    env: { EVENT_STORE: store, EVENT_INDEX: index, TEAM_HISTORY: teamHistory, PLAYER_HISTORY: playerHistory },
+    env: { EVENT_STORE: store, OBSERVATION_STORE: memoryKv(), EVENT_INDEX: index, TEAM_HISTORY: teamHistory, PLAYER_HISTORY: playerHistory },
     adapter,
     fetchSource: async () => ({
       id: 'event-1',
