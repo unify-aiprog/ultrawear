@@ -6,7 +6,7 @@
  */
 
 import { createObservation, reconcileObservations } from './knowledge-ledger.js';
-import { findBestEventMatch } from './event-matching.js';
+import { canonicalEventIdentity, findBestEventMatch } from './event-matching.js';
 
 const RECONCILED_FIELDS = Object.freeze([
   'sport',
@@ -62,7 +62,7 @@ export function createEventReconciler({ eventStore, observationStore, sourceConf
       const direct = await eventStore.getEvent(incoming.id);
       const match = direct ? { event: direct, score: 1 } : findBestEventMatch(incoming, await eventStore.listEvents());
       const existing = match?.event ?? null;
-      const canonicalId = existing?.id ?? `event:${incoming.sport}:${incoming.startsAt}:${incoming.home?.id ?? incoming.home?.name}:${incoming.away?.id ?? incoming.away?.name}`;
+      const canonicalId = existing?.id ?? canonicalEventIdentity(incoming) ?? `event:${sourceId}:${incoming.id}`;
       const confidence = Math.min(1, Math.max(0, Number(sourceConfidence({ sourceId, sourceType, event: incoming })) || 0));
 
       const observations = [];
