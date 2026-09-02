@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="UltraWear FC — sport, stories and community." />
+  <title>UltraWear FC</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="UltraWear FC home"><span>ULTRAWEAR</span><b>FC</b></a>
+    <nav aria-label="Main navigation">
+      <a href="/live">Live</a><a href="/sports">Sports</a><a href="/news">News</a><a href="/community">Community</a><a href="/wear">UltraWear</a>
+    </nav>
+  </header>
+  <main id="hub-app" class="section" aria-live="polite"></main>
+  <footer><div class="brand"><span>ULTRAWEAR</span><b>FC</b></div><p>FC = FOR COMMUNITY.</p><small>© 2026 UltraWear FC. Built for the culture.</small></footer>
+  <script>
+    const key = location.pathname.split('/').filter(Boolean)[0] || 'home';
+    const pages = {
+      live: { eyebrow: 'RIGHT NOW', title: 'LIVE SPORT', copy: 'Follow verified live events across the sports world.', links: [['Football','/football'],['Basketball','/basketball'],['Tennis','/tennis'],['Running','/running']] },
+      sports: { eyebrow: 'YOUR WORLD OF SPORT', title: 'CHOOSE YOUR GAME', copy: 'Every sport gets its own home, with room to grow as the network expands.', links: [['Football','/football'],['Basketball','/basketball'],['Tennis','/tennis'],['Running','/running']] },
+      news: { eyebrow: 'THE FEED', title: 'SPORT. UNFILTERED.', copy: 'Stories, analysis, culture and the people shaping sport.', links: [['Latest stories','/news'],['Live sport','/live'],['Community','/community']] },
+      community: { eyebrow: 'THIS IS THE POINT', title: 'FOR COMMUNITY.', copy: 'Sport is a shared language. Follow, discuss, react and build the culture together.', links: [['Explore sport','/sports'],['Latest stories','/news'],['Live sport','/live']] },
+      wear: { eyebrow: 'ULTRAWEAR', title: 'WEAR THE CULTURE.', copy: 'Football-inspired today. Sports and lifestyle tomorrow.', links: [['Back to UltraWear','/'],['Explore sport','/sports'],['Community','/community']] }
+    };
+    const page = pages[key] || pages.sports;
+    document.title = `${page.title} — UltraWear FC`;
+    document.querySelector('#hub-app').innerHTML = `<p class="eyebrow">${page.eyebrow}</p><h1>${page.title}</h1><p class="lede">${page.copy}</p><div class="actions">${page.links.map(([label,href]) => `<a class="button primary" href="${href}">${label} <span>↗</span></a>`).join('')}</div>`;
+  </script>
+</body>
+</html>
