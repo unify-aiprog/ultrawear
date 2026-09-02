@@ -5,6 +5,7 @@ rm -rf dist
 mkdir -p dist
 
 cp index.html styles.css app.js dist/
+cp -R live-sports-ui dist/live-sports-ui
 
 # Cloudflare Pages reads these files from the deployment output directory.
 cat > dist/_headers <<'EOF'
