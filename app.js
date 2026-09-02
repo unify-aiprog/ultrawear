@@ -10,7 +10,6 @@ document.querySelectorAll('.sport-grid .sport').forEach((link) => {
   if (label && sportRoutes[label]) link.setAttribute('href', sportRoutes[label]);
 });
 
-// Hide the sticky header while scrolling down, but keep it visible at the top.
 let ticking = false;
 window.addEventListener('scroll', () => {
   if (ticking) return;
@@ -19,10 +18,8 @@ window.addEventListener('scroll', () => {
     if (y <= 20) header.style.transform = 'translateY(0)';
     else if (y > lastScroll + 4 && y > 100 && !mobileNav?.classList.contains('is-open')) header.style.transform = 'translateY(-100%)';
     else if (y < lastScroll - 4) header.style.transform = 'translateY(0)';
-    lastScroll = y;
-    ticking = false;
-  });
-  ticking = true;
+    lastScroll = y; ticking = false;
+  }); ticking = true;
 }, { passive: true });
 
 const setMenu = (open) => {
@@ -48,13 +45,6 @@ if ('IntersectionObserver' in window) {
   sections.forEach((section) => observer.observe(section));
 }
 
-document.querySelectorAll('a[href^="#"]').forEach((link) => {
-  link.addEventListener('click', () => {
-    const target = document.querySelector(link.getAttribute('href'));
-    if (target && target.id !== 'top') target.setAttribute('tabindex', '-1');
-  });
-});
-
 const interestCooldown = 10 * 60 * 1000;
 const interestKey = (id) => `uw-interest:${id}`;
 document.addEventListener('click', (event) => {
@@ -71,3 +61,8 @@ document.addEventListener('click', (event) => {
   } catch {}
   fetch('/api/trending', { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ entityId, entityType, label }), keepalive: true }).catch(() => {});
 });
+
+// Player/athlete/manager identity is shown in a modal rather than generating a page per person.
+if (document.querySelector('[data-person-id]')) {
+  import('./live-sports-ui/person-modal.js').then(({ bindPersonModals }) => bindPersonModals()).catch(() => {});
+}
