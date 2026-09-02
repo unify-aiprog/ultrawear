@@ -13,9 +13,12 @@ export function createDurableIngestionCoordinator({ scheduler, ingest, now = () 
       for (const item of due) {
         if (!item?.sourceId) continue;
         const claimed = typeof scheduler.claim === 'function'
-          ? await scheduler.claim(item.sourceId, leaseSeconds, at)
+          ? await scheduler.claim(item.sourceId, at, leaseSeconds)
           : true;
-        if (!claimed) continue;
+        if (!claimed) {
+          results.push({ sourceId: item.sourceId, ok: false, claimed: false, skipped: true });
+          continue;
+        }
 
         try {
           const result = await ingest(item.sourceId, item.context ?? {});
@@ -35,7 +38,7 @@ export function createDurableIngestionCoordinator({ scheduler, ingest, now = () 
             lastRunAt: new Date(now()).toISOString(),
             lastError: result?.ok ? null : (result?.error ?? 'ingestion failed'),
           }, delaySeconds);
-          results.push({ sourceId: item.sourceId, ok: Boolean(result?.ok), delaySeconds, result });
+          results.push({ sourceId: item.sourceId, ok: Boolean(result?.ok), claimed: true, delaySeconds, result });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           await scheduler.schedule(item.sourceId, {
@@ -44,7 +47,7 @@ export function createDurableIngestionCoordinator({ scheduler, ingest, now = () 
             lastRunAt: new Date(now()).toISOString(),
             lastError: message,
           }, nextPollDelay({ eventStatus: item.context?.eventStatus ?? 'scheduled', sourceStatus: 'degraded', base: item.context?.baseDelay ?? baseDelay }));
-          results.push({ sourceId: item.sourceId, ok: false, error: message });
+          results.push({ sourceId: item.sourceId, ok: false, claimed: true, error: message });
         }
       }
       return results;
