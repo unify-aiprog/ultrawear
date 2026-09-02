@@ -12,7 +12,7 @@ UltraWear now has a server-side Sportradar client for:
 - **Live Summaries** — `/api/sports/soccer/live`
 - **Competitor Summaries** — `/api/teams/{competitorId}/sportradar-summary`
 
-Sportradar documents Competitor Summaries as providing upcoming scheduling information and the 30 most recent completed matches for a competitor, with a 300-second cache/TTL. Daily Summaries provide a day's soccer fixtures/results, while Live Summaries provide currently live matches and update much more frequently. The website keeps these provider calls server-side. citeturn0search1turn0search3turn0search4
+Sportradar documents Competitor Summaries as providing upcoming scheduling information and the 30 most recent completed matches for a competitor, with a 300-second cache/TTL. Daily Summaries provide a day's soccer fixtures/results, while Live Summaries provide currently live matches and update much more frequently. The website keeps these provider calls server-side.
 
 ## Runtime contract
 
