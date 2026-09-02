@@ -31,6 +31,8 @@ function identityPart(value) {
 
 export function canonicalMomentIdentity(eventId, moment) {
   if (!eventId || !moment?.type || !moment?.occurredAt) return null;
+  // `occurredAt` is the cross-source occurrence anchor. Match clock/minute is
+  // deliberately excluded because providers can represent it differently.
   return [
     'moment',
     eventId,
@@ -38,7 +40,6 @@ export function canonicalMomentIdentity(eventId, moment) {
     identityPart(moment.occurredAt),
     identityPart(moment.actor?.id ?? moment.actor?.name ?? ''),
     identityPart(moment.team?.id ?? moment.team?.name ?? ''),
-    identityPart(moment.minute ?? ''),
   ].join(':');
 }
 
@@ -52,7 +53,7 @@ function buildMoment({ canonicalId, reconciled }) {
   const occurredAt = get('occurredAt');
   if (!type || !MOMENT_TYPES.includes(type) || !occurredAt) return null;
 
-  const moment = {
+  return {
     id: canonicalId,
     type,
     occurredAt,
@@ -70,8 +71,6 @@ function buildMoment({ canonicalId, reconciled }) {
       sources: [...new Set(reconciled.flatMap((item) => item.sources ?? []))],
     },
   };
-
-  return moment;
 }
 
 async function reconcileOne({ eventId, moment, sourceId, observedAt, sourceConfidence, observationStore }) {
