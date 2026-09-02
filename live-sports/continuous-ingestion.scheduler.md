@@ -1,0 +1,1 @@
+Scheduler behavior: event status controls baseline cadence, source health modifies cadence, and stop cancels pending timers. Provider adapters remain outside the scheduler.
