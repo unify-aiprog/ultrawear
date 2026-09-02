@@ -30,11 +30,12 @@ function memoryKv() {
   };
 }
 
-test('worker persists changed events and updates discovery index', async () => {
+test('worker persists changed events, discovery index, and both team histories', async () => {
   const store = memoryKv();
   const index = memoryKv();
+  const teamHistory = memoryKv();
   const worker = createLiveSportsWorker({
-    env: { EVENT_STORE: store, EVENT_INDEX: index },
+    env: { EVENT_STORE: store, EVENT_INDEX: index, TEAM_HISTORY: teamHistory },
     adapter,
     fetchSource: async () => ({ id: 'event-1', home: 2, away: 1 }),
   });
@@ -43,4 +44,11 @@ test('worker persists changed events and updates discovery index', async () => {
   expect(result.ok).toBe(true);
   expect(JSON.parse(await store.get('event-1')).score).toEqual({ home: 2, away: 1 });
   expect(JSON.parse(await index.get('events'))[0].id).toBe('event-1');
+
+  const homeMatches = JSON.parse(await teamHistory.get('team:home:matches'));
+  const awayMatches = JSON.parse(await teamHistory.get('team:away:matches'));
+  expect(homeMatches).toHaveLength(1);
+  expect(awayMatches).toHaveLength(1);
+  expect(homeMatches[0]).toMatchObject({ eventId: 'event-1', teamId: 'home', opponent: { id: 'away', name: 'Away' } });
+  expect(awayMatches[0]).toMatchObject({ eventId: 'event-1', teamId: 'away', opponent: { id: 'home', name: 'Home' } });
 });
