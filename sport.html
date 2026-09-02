@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="UltraWear FC sport homepage." />
+  <meta name="theme-color" content="#11110f" />
+  <title>UltraWear FC — Sport</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="live-sports-ui/moments.css" />
+  <link rel="stylesheet" href="live-sports-ui/sport-home.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="UltraWear FC home"><span>ULTRAWEAR</span><b>FC</b></a>
+    <nav aria-label="Main navigation"><a href="#live">Live</a><a href="#latest">Latest</a><a href="#stories">Stories</a><a href="#community">Community</a></nav>
+    <button class="menu" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-navigation">☰</button>
+    <div class="mobile-nav" id="mobile-navigation" aria-label="Mobile navigation"><a href="#live">Live</a><a href="#latest">Latest</a><a href="#stories">Stories</a><a href="#community">Community</a></div>
+  </header>
+
+  <main id="main-content">
+    <section class="sport-hero" aria-labelledby="sport-title">
+      <div>
+        <p class="eyebrow" id="sport-eyebrow">SPORT</p>
+        <h1 id="sport-title">SPORT.</h1>
+        <p id="sport-lede">Everything happening in this sport, in one place.</p>
+        <div class="sport-actions"><a class="button primary" href="#live">See live action <span>↗</span></a><a class="button ghost" href="#latest">Latest stories</a></div>
+      </div>
+      <div class="sport-mark" id="sport-mark" aria-hidden="true">UW</div>
+    </section>
+
+    <section id="live" class="section sport-live" aria-labelledby="live-title">
+      <div class="section-head"><div><p class="eyebrow">RIGHT NOW</p><h2 id="live-title">LIVE <span id="live-sport-name">SPORT</span></h2></div><span class="text-link" id="feed-status">Checking feed ↗</span></div>
+      <div class="live-intro"><span class="live-intro-dot"></span><strong id="live-state">THE ACTION, LIVE.</strong><span id="live-description">Verified live events for this sport.</span></div>
+      <div class="live-grid sport-live-grid" id="sport-live-grid" aria-live="polite" aria-label="Live sport feed"><article class="live-card featured loading-card"><div class="score"><strong>LOADING</strong><b>—</b><strong>SPORT</strong></div><div class="match-meta"><span>Checking verified feed</span><span>UltraWear</span></div></article></div>
+    </section>
+
+    <section id="latest" class="section sport-latest" aria-labelledby="latest-title">
+      <div class="section-head"><div><p class="eyebrow">THE SPORT</p><h2 id="latest-title">LATEST <span>NOW.</span></h2></div></div>
+      <div class="sport-panels">
+        <article><span class="panel-index">01</span><h3 id="latest-headline">Stories, results and moments.</h3><p id="latest-copy">The sport homepage will become the dedicated front door for news, intelligence and community around this game.</p></article>
+        <article><span class="panel-index">02</span><h3>Live intelligence.</h3><p>Scores, schedules, performances and verified moments will converge here as the data engine grows.</p></article>
+        <article><span class="panel-index">03</span><h3>Built for the community.</h3><p>Follow the sport, discover athletes and teams, and move from the latest moment to the wider story.</p></article>
+      </div>
+    </section>
+
+    <section id="stories" class="section sport-stories" aria-labelledby="stories-title"><div class="section-head"><div><p class="eyebrow">THE FEED</p><h2 id="stories-title">SPORT.<br /><span>UNFILTERED.</span></h2></div></div><div class="sport-story-grid"><article><span>01</span><h3 id="story-one">The game beyond the score.</h3><p>Culture, context and the people shaping this sport.</p></article><article><span>02</span><h3>What to watch.</h3><p>Key events, athletes and matchups worth following.</p></article><article><span>03</span><h3>Moments that matter.</h3><p>Verified events become part of a persistent sports history.</p></article></div></section>
+
+    <section id="community" class="community" aria-labelledby="community-title"><div class="community-mark" aria-hidden="true">FC</div><div><p class="eyebrow">THIS IS THE POINT</p><h2 id="community-title">FC MEANS<br /><em>FOR COMMUNITY.</em></h2><p>Every sport gets its own home, but every sport belongs to the same community.</p><a class="button primary" href="/">Explore UltraWear <span>↗</span></a></div></section>
+  </main>
+
+  <footer><div class="brand"><span>ULTRAWEAR</span><b>FC</b></div><p>FC = FOR COMMUNITY.</p><div><a href="/">Home</a><a href="#community">Community</a><a href="#top">Back to top</a></div><small>© 2026 UltraWear FC. Built for the culture.</small></footer>
+  <script src="app.js"></script>
+  <script type="module" src="live-sports-ui/sport-home.js"></script>
+</body>
+</html>
