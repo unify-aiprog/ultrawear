@@ -59,59 +59,70 @@ function normalizeStatus(payload) {
   return STATUS_MAP[raw] ?? null;
 }
 
-function timelineMoment(item, index) {
+function timelineMoment(item, index, { home, away }) {
   const rawType = String(item?.description ?? item?.type ?? '').trim().toLowerCase();
   const type = MOMENT_MAP[rawType];
   if (!type) return null;
 
+  // The canonical moment contract requires an actual occurrence timestamp.
+  // Match-clock strings are retained as `minute`, but are never promoted to
+  // timestamps because doing so would fabricate wall-clock time.
   const occurredAt = item?.timestamp ?? item?.occurred_at ?? item?.occurredAt;
-  const matchClock = item?.match_clock ?? item?.clock;
-  if (!occurredAt && !matchClock) return null;
+  if (!occurredAt) return null;
+
+  const side = item?.competitor === 'home' ? home : item?.competitor === 'away' ? away : null;
+  const actor = item?.player?.id ?? item?.player?.name ?? item?.competitor_player_id ?? null;
+  const team = side?.id ?? item?.team?.id ?? item?.team?.name ?? null;
 
   return createSportMoment({
-    id: item?.id ?? `sportradar-moment:${type}:${occurredAt ?? matchClock}:${index}`,
+    id: item?.id ?? `sportradar-moment:${type}:${occurredAt}:${index}`,
     type,
-    occurredAt: occurredAt ?? matchClock,
-    minute: item?.minute ?? item?.match_time ?? matchClock ?? null,
+    occurredAt,
+    minute: item?.minute ?? item?.match_time ?? item?.match_clock ?? item?.clock ?? null,
     title: item?.description ?? rawType,
     description: item?.comment ?? item?.text ?? null,
-    actor: item?.player?.id ?? item?.player?.name ?? item?.competitor_player_id ?? null,
-    team: item?.competitor ?? item?.team?.id ?? item?.team?.name ?? null,
+    actor,
+    team,
     related: item?.related_to ? [item.related_to] : [],
     animation: { key: type.replace(/_/g, '-'), replayable: true },
-    verified: true,
-    source: { provider: 'Sportradar', sourceId: 'sportradar-soccer' },
+    // Provider observation is not cross-source verification. Reconciliation
+    // decides whether the canonical moment becomes corroborated/verified.
+    verified: false,
+    source: { id: 'sportradar-soccer', provider: 'Sportradar' },
   });
 }
 
-function normalizeMoments(payload) {
+function normalizeMoments(payload, teams) {
   const timeline = Array.isArray(payload?.timeline) ? payload.timeline : [];
-  return timeline.map(timelineMoment).filter(Boolean);
+  return timeline.map((item, index) => timelineMoment(item, index, teams)).filter(Boolean);
 }
 
 export function normalizeSportRadarSoccer(payload, context = {}) {
   const event = payload?.sport_event ?? {};
   const status = normalizeStatus(payload);
-  const { home, away } = competitors(payload);
+  const teams = competitors(payload);
   const startsAt = required(event.start_time, 'sport_event.start_time');
   const score = payload?.sport_event_status ? {
     home: payload.sport_event_status.home_score ?? null,
     away: payload.sport_event_status.away_score ?? null,
   } : null;
-  const moments = normalizeMoments(payload);
+  const moments = normalizeMoments(payload, teams);
+  const latestMoment = moments.reduce((latest, current) => (
+    !latest || current.occurredAt > latest.occurredAt ? current : latest
+  ), null);
 
   return createSportEvent({
     id: required(event.id, 'sport_event.id'),
-    sport: 'Football',
-    competition: event.sport_event_context?.competition?.name ?? event.sport_event_context?.category?.name ?? 'Football',
-    home: { id: required(home.id, 'home.id'), name: required(home.name, 'home.name'), shortName: home.abbreviation ?? home.short_name ?? null },
-    away: { id: required(away.id, 'away.id'), name: required(away.name, 'away.name'), shortName: away.abbreviation ?? away.short_name ?? null },
+    sport: 'football',
+    competition: { id: event.sport_event_context?.competition?.id ?? null, name: event.sport_event_context?.competition?.name ?? event.sport_event_context?.category?.name ?? 'Football' },
+    home: { id: required(teams.home.id, 'home.id'), name: required(teams.home.name, 'home.name'), shortName: teams.home.abbreviation ?? teams.home.short_name ?? null },
+    away: { id: required(teams.away.id, 'away.id'), name: required(teams.away.name, 'away.name'), shortName: teams.away.abbreviation ?? teams.away.short_name ?? null },
     startsAt,
     status: required(status, `sport_event_status.status (${payload?.sport_event_status?.status ?? 'unknown'})`),
     score,
     venue: event.venue ? { id: event.venue.id ?? null, name: event.venue.name ?? null, city: event.venue.city_name ?? null } : null,
     source: { id: 'sportradar-soccer', provider: 'Sportradar', observedAt: context.observedAt ?? new Date().toISOString() },
-    moment: moments.at(-1) ?? null,
+    moment: latestMoment,
     moments,
     updatedAt: payload?.sport_event_status?.updated_at ?? context.observedAt ?? null,
   });
@@ -120,6 +131,6 @@ export function normalizeSportRadarSoccer(payload, context = {}) {
 export const sportradarSoccerAdapter = createSourceAdapter({
   id: 'sportradar-soccer',
   name: 'Sportradar Soccer',
-  sport: 'Football',
+  sport: 'football',
   normalize: normalizeSportRadarSoccer,
 });
