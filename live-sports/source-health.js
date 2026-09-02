@@ -37,6 +37,11 @@ export function createSourceHealthTracker({ policy = DEFAULT_FRESHNESS, now = ()
       state.set(sourceId, { ...health, failures, eventStatus });
       return health;
     },
+    restore(health) {
+      if (!health?.sourceId) throw new TypeError('sourceId is required');
+      state.set(health.sourceId, { ...health, failures: Number(health.failures ?? 0), eventStatus: health.eventStatus ?? null });
+      return state.get(health.sourceId);
+    },
     get(sourceId) { return state.get(sourceId) ?? null; },
     list() { return [...state.values()]; },
   });
