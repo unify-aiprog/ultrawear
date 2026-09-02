@@ -71,28 +71,26 @@ export function renderTeamMatchCard(match) {
   const normalizedMoment = normalizeMoment(match.moment);
   const momentData = normalizedMoment ? ` data-moment="${escapeHtml(normalizedMoment.type)}"` : '';
   const eventIdData = match.id ? ` data-event-id="${escapeHtml(match.id)}"` : '';
-  const eventId = encodeURIComponent(match.id ?? '');
+  const eventHref = match.id ? `/event/${encodeURIComponent(match.id)}` : '#';
   const score = match.score ? `<div class="card-score"><b>${escapeHtml(match.score.home)}</b><span>—</span><b>${escapeHtml(match.score.away)}</b></div>` : '';
   const people = renderPeople(match);
 
   return `
-    <a class="live-card-link" href="/event/${eventId}" aria-label="Open ${escapeHtml(home.name)} versus ${escapeHtml(away.name)} event page">
-      <article class="live-card team-match-card motion-${intensity} ${normalizedMoment ? momentClass(normalizedMoment) : ''}" style="${teamStyle(match.home)};--away-primary:${away.primary};--away-secondary:${away.secondary}" data-match-card data-intensity="${intensity}"${eventIdData}${momentData}>
-        <div class="card-top">
-          <span class="live-dot ${match.isLive ? 'is-live' : 'is-up-next'}">${status}</span>
-          <span>${escapeHtml(match.sport ?? 'Sport')} · ${competition}</span>
-        </div>
-        <div class="team-pair" aria-label="${escapeHtml(home.name)} versus ${escapeHtml(away.name)}">
-          <div class="team team-home" style="${teamStyle(match.home)}">${teamBadge(match.home)}<strong>${escapeHtml(match.home)}</strong></div>
-          ${score || '<div class="versus"><span>VS</span></div>'}
-          <div class="team team-away" style="${teamStyle(match.away)}">${teamBadge(match.away)}<strong>${escapeHtml(match.away)}</strong></div>
-        </div>
-        ${people}
-        ${moment}
-        <div class="match-meta"><span>${note}</span><span>${escapeHtml(match.meta ?? 'Source pending')} ↗</span></div>
-        <div class="card-sweep" aria-hidden="true"></div><div class="momentum-line" aria-hidden="true"><span></span></div>
-      </article>
-    </a>`;
+    <article class="live-card team-match-card motion-${intensity} ${normalizedMoment ? momentClass(normalizedMoment) : ''}" style="${teamStyle(match.home)};--away-primary:${away.primary};--away-secondary:${away.secondary}" data-match-card data-intensity="${intensity}"${eventIdData}${momentData}>
+      <div class="card-top">
+        <span class="live-dot ${match.isLive ? 'is-live' : 'is-up-next'}">${status}</span>
+        <span>${escapeHtml(match.sport ?? 'Sport')} · ${competition}</span>
+      </div>
+      <div class="team-pair" aria-label="${escapeHtml(home.name)} versus ${escapeHtml(away.name)}">
+        <div class="team team-home" style="${teamStyle(match.home)}">${teamBadge(match.home)}<strong>${escapeHtml(match.home)}</strong></div>
+        ${score || '<div class="versus"><span>VS</span></div>'}
+        <div class="team team-away" style="${teamStyle(match.away)}">${teamBadge(match.away)}<strong>${escapeHtml(match.away)}</strong></div>
+      </div>
+      ${people}
+      ${moment}
+      <div class="match-meta"><span>${note}</span><a class="event-card-link" href="${eventHref}">Open match centre ↗</a></div>
+      <div class="card-sweep" aria-hidden="true"></div><div class="momentum-line" aria-hidden="true"><span></span></div>
+    </article>`;
 }
 
 export function renderMatchFeed(container, matches) {
