@@ -10,18 +10,21 @@ export function createDurableScheduler({ store, now = () => Date.now() } = {}) {
   return Object.freeze({
     async schedule(sourceId, context = {}, delaySeconds = 30) {
       if (!sourceId) throw new TypeError('sourceId is required');
+      const currentTime = now();
       const item = {
         sourceId,
         context,
-        scheduledAt: new Date(now() + Math.max(0, delaySeconds) * 1000).toISOString(),
-        updatedAt: new Date(now()).toISOString(),
+        scheduledAt: new Date(currentTime + Math.max(0, delaySeconds) * 1000).toISOString(),
+        updatedAt: new Date(currentTime).toISOString(),
       };
       await store.put(key(sourceId), item);
       return item;
     },
     async due(at = now()) {
       const items = await store.list('poll:');
-      return items.filter((item) => Date.parse(item?.scheduledAt ?? '') <= at).sort((a, b) => Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt));
+      return items
+        .filter((item) => Number.isFinite(Date.parse(item?.scheduledAt ?? '')) && Date.parse(item.scheduledAt) <= at)
+        .sort((a, b) => Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt));
     },
     async remove(sourceId) {
       if (!sourceId) throw new TypeError('sourceId is required');
