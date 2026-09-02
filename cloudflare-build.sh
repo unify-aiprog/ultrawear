@@ -4,10 +4,9 @@ set -euo pipefail
 rm -rf dist
 mkdir -p dist
 
-cp index.html styles.css app.js dist/
+cp index.html event.html styles.css app.js dist/
 cp -R live-sports-ui dist/live-sports-ui
 
-# Cloudflare Pages reads these files from the deployment output directory.
 cat > dist/_headers <<'EOF'
 /*
   X-Content-Type-Options: nosniff
@@ -16,6 +15,11 @@ cat > dist/_headers <<'EOF'
 
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+EOF
+
+# Cloudflare Pages fallback: /event/<id> resolves to the event shell.
+cat > dist/_redirects <<'EOF'
+/event/* /event.html 200
 EOF
 
 echo "UltraWear Cloudflare build complete: dist/"
