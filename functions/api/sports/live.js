@@ -13,10 +13,7 @@ function json(body, status = 200, cache = 'public, max-age=1, stale-while-revali
 function createRegistry(env) {
   const basketball = env.BBS_API_KEY ? createBigBallsBasketballAdapter({ apiKey: env.BBS_API_KEY }) : null;
   return createLiveSourceRegistry({
-    sources: [
-      createSportradarSoccerLiveSource(env),
-      basketball,
-    ].filter(Boolean),
+    sources: [createSportradarSoccerLiveSource(env), basketball].filter(Boolean),
   });
 }
 
@@ -25,7 +22,11 @@ export async function onRequestGet(context) {
   try {
     const registry = createRegistry(context.env);
     const feeds = await registry.fetchAll({ observedAt });
-    const events = selectLiveSportEvents(combineSportFeeds(feeds), { limit: 50 });
+    const requestedSport = new URL(context.request.url).searchParams.get('sport')?.trim().toLowerCase() || null;
+    const events = selectLiveSportEvents(combineSportFeeds(feeds), {
+      limit: 50,
+      sports: requestedSport ? [requestedSport] : null,
+    });
     return json({
       observedAt,
       count: events.length,
@@ -34,13 +35,6 @@ export async function onRequestGet(context) {
       events,
     });
   } catch (error) {
-    return json({
-      observedAt,
-      count: 0,
-      sports: [],
-      verified: false,
-      events: [],
-      error: error instanceof Error ? error.message : String(error),
-    }, 502, 'no-store');
+    return json({ observedAt, count: 0, sports: [], verified: false, events: [], error: error instanceof Error ? error.message : String(error) }, 502, 'no-store');
   }
 }
