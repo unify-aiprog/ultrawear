@@ -6,3 +6,4 @@ export * from './adapter.js';
 export * from './freshness.js';
 export * from './event-page.js';
 export * from './registry.js';
+export * from './retention.js';
