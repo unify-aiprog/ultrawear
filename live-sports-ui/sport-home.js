@@ -60,6 +60,7 @@ const setText = (selector, value, root = document) => {
 setText('#sport-eyebrow', sport.name.toUpperCase());
 setText('#sport-title', `${sport.name.toUpperCase()}.`);
 setText('#sport-lede', sport.lede);
+setText('#sport-psychology', sport.psychology);
 setText('#sport-mark', sport.mark);
 setText('#live-sport-name', sport.name.toUpperCase());
 setText('#live-state', sport.liveState);
