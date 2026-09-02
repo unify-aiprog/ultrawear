@@ -1,6 +1,5 @@
-import { createSportradarSoccerClient } from '../../../live-sports/providers/sportradar-soccer-client.js';
-import { normalizeSportRadarSoccer } from '../../../live-sports/providers/sportradar-soccer.js';
 import { createLiveSourceRegistry } from '../../../live-sports/live-source-registry.js';
+import { createSportradarSoccerLiveSource } from '../../../live-sports/providers/sportradar-live-source.js';
 import { combineSportFeeds, selectLiveSportEvents } from '../../../live-sports/multi-sport-feed.js';
 
 function json(body, status = 200, cache = 'public, max-age=1, stale-while-revalidate=5') {
@@ -10,29 +9,14 @@ function json(body, status = 200, cache = 'public, max-age=1, stale-while-revali
   });
 }
 
-function items(payload) {
-  if (Array.isArray(payload?.summaries)) return payload.summaries;
-  if (Array.isArray(payload?.sport_events)) return payload.sport_events;
-  return [];
-}
-
-function createRegistry(env, observedAt) {
-  const client = createSportradarSoccerClient(env);
-  return createLiveSourceRegistry({
-    sources: [{
-      id: 'sportradar-soccer',
-      name: 'Sportradar Soccer',
-      sport: 'football',
-      async fetch() { return items(await client.liveSummaries()); },
-      normalize(payload) { return normalizeSportRadarSoccer(payload, { observedAt }); },
-    }],
-  });
+function createRegistry(env) {
+  return createLiveSourceRegistry({ sources: [createSportradarSoccerLiveSource(env)] });
 }
 
 export async function onRequestGet(context) {
   const observedAt = new Date().toISOString();
   try {
-    const registry = createRegistry(context.env, observedAt);
+    const registry = createRegistry(context.env);
     const feeds = await registry.fetchAll({ observedAt });
     const events = selectLiveSportEvents(combineSportFeeds(feeds), { limit: 50 });
     return json({
