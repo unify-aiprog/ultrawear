@@ -40,10 +40,9 @@
 
     <section id="live" class="section live-section" aria-labelledby="live-title">
       <div class="section-head"><div><p class="eyebrow">RIGHT NOW</p><h2 id="live-title">LIVE <span>SPORT</span></h2></div><a href="#sports" class="text-link">View all sports ↗</a></div>
-      <div class="live-grid">
-        <article class="live-card featured"><div class="card-top"><span class="live-dot">LIVE</span><span>Football · Premier League</span></div><div class="score"><strong>ARS</strong><b>2 — 1</b><strong>CHE</strong></div><div class="match-meta"><span>78'</span><span>Emirates Stadium</span><span>Today</span></div></article>
-        <article class="live-card"><div class="card-top"><span class="live-dot">LIVE</span><span>Basketball</span></div><h3>LAL <small>vs</small> BOS</h3><div class="mini-score">94 — 91</div><p>Q4 · 02:14</p></article>
-        <article class="live-card"><div class="card-top"><span class="live-dot">LIVE</span><span>Tennis</span></div><h3>ALCARAZ <small>vs</small> SINNER</h3><div class="mini-score">6 — 4</div><p>Set 2 · 3–2</p></article>
+      <div class="live-intro"><span class="live-intro-dot"></span><strong>THE STADIUM FEEL, ONLINE.</strong><span>Verified feeds will drive these cards. This preview never presents demo scores as real.</span></div>
+      <div class="live-grid" id="live-sports-grid" aria-live="polite" aria-label="Live sports feed">
+        <article class="live-card featured loading-card"><div class="card-top"><span class="live-dot">FEED READY</span><span>Football · Live data</span></div><div class="score"><strong>ARS</strong><b>VS</b><strong>CHE</strong></div><div class="match-meta"><span>Waiting for verified feed</span><span>UltraWear</span></div></article>
       </div>
     </section>
 
@@ -58,5 +57,10 @@
 
   <footer><div class="brand"><span>ULTRAWEAR</span><b>FC</b></div><p>FC = FOR COMMUNITY.</p><div><a href="#top">Instagram</a><a href="#top">TikTok</a><a href="#top">Contact</a></div><small>© 2026 UltraWear FC. Built for the culture.</small></footer>
   <script src="app.js"></script>
+  <script type="module">
+    import { DEMO_MATCHES } from './live-sports-ui/demo-data.js';
+    import { renderMatchFeed } from './live-sports-ui/render.js';
+    renderMatchFeed(document.querySelector('#live-sports-grid'), DEMO_MATCHES);
+  </script>
 </body>
 </html>
