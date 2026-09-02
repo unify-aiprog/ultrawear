@@ -20,8 +20,9 @@ function minutesBetween(a, b) {
 export function canonicalEventIdentity(event) {
   if (!event?.sport || !event?.startsAt || !event?.home || !event?.away) return null;
   const kickoff = new Date(event.startsAt).toISOString();
-  const home = normalizeName(event.home.id ?? event.home.name);
-  const away = normalizeName(event.away.id ?? event.away.name);
+  // Team IDs are commonly provider-scoped, so names are the cross-provider identity signal.
+  const home = normalizeName(event.home.name);
+  const away = normalizeName(event.away.name);
   if (!home || !away) return null;
   return `event:${normalizeName(event.sport)}:${kickoff}:${home}:${away}`;
 }
