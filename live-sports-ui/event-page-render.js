@@ -24,10 +24,11 @@ function badge(team) {
 }
 
 function statusLabel(event) {
-  if (event.status === 'live' || event.status === 'halftime') {
-    const minute = event.minute ?? event.moment?.timestamp ?? null;
-    return minute ? `${event.status === 'halftime' ? 'HALF TIME' : 'LIVE'} · ${esc(minute)}` : event.status === 'halftime' ? 'HALF TIME' : 'LIVE';
+  if (event.status === 'live') {
+    const minute = event.minute ?? null;
+    return minute != null ? `LIVE · ${esc(minute)}'` : 'LIVE';
   }
+  if (event.status === 'halftime') return 'HALF TIME';
   if (event.status === 'finished') return 'FULL TIME';
   if (event.status === 'postponed') return 'POSTPONED';
   if (event.status === 'cancelled') return 'CANCELLED';
@@ -48,7 +49,7 @@ function normalizeMoments(event) {
   }] : [];
 }
 
-function renderEvent(event) {
+function renderEvent(event, { fallback = false } = {}) {
   const label = statusLabel(event);
   const moments = normalizeMoments(event);
   const stats = normalizeStats(event);
@@ -69,7 +70,7 @@ function renderEvent(event) {
           <div class="event-team away"><span>${esc(teamLabel(event.away))}</span>${badge(event.away)}</div>
         </div>
         <div class="event-meta"><span>📍 ${esc(venue || 'Venue TBC')}</span><span>Data source: ${esc(source || 'Awaiting verified source')}</span><span>Last updated: ${esc(event.updatedAt || 'Not yet')}</span></div>
-        <div class="event-live-note">${event.status === 'live' || event.status === 'halftime' ? 'Live data is read from the canonical event store. Refreshes are intentionally short-lived while the event is active.' : 'This event URL persists after the event and becomes the historical match centre automatically.'}</div>
+        <div class="event-live-note">${fallback ? 'Preview event: canonical event store unavailable in this environment.' : (event.status === 'live' || event.status === 'halftime' ? 'Live data is read from the canonical event store. This page refreshes while the event is active.' : 'This event URL persists after the event and becomes the historical match centre automatically.')}</div>
       </section>
       <nav class="event-nav" aria-label="Event sections"><a href="#timeline">Timeline</a><a href="#stats">Stats</a><a href="#community">Community</a><a href="#related">Related</a></nav>
       <div class="event-grid">
@@ -81,31 +82,45 @@ function renderEvent(event) {
     </div>`;
 }
 
-async function loadEvent() {
-  app.innerHTML = '<div class="event-loading">Loading event centre…</div>';
+async function fetchCanonicalEvent() {
+  const response = await fetch(`/api/events/${encodeURIComponent(id)}`, {
+    headers: { accept: 'application/json' },
+    cache: 'no-store',
+  });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  return payload?.event || null;
+}
+
+async function refresh({ initial = false } = {}) {
+  if (initial) app.innerHTML = '<div class="event-loading">Loading event centre…</div>';
+
   try {
-    const response = await fetch(`/api/events/${encodeURIComponent(id)}`, { headers: { accept: 'application/json' } });
-    if (response.ok) {
-      const payload = await response.json();
-      if (payload?.event) {
-        renderEvent(payload.event);
-        return payload.event;
+    const event = await fetchCanonicalEvent();
+    if (event) {
+      renderEvent(event);
+      if (event.status === 'live' || event.status === 'halftime') {
+        window.setTimeout(() => refresh(), 10000);
       }
+      return event;
     }
   } catch (_) {
-    // A demo fallback keeps local preview usable when the event store is unavailable.
+    // Preserve the previous rendered snapshot during transient polling failures.
   }
 
   const demo = EVENT_DEMO_DATA[id];
-  if (demo) {
-    renderEvent(demo);
-    const note = document.querySelector('.event-live-note');
-    if (note) note.textContent = 'Preview event: the canonical event store is not available in this environment, so this page is showing explicitly labelled demo data.';
+  if (demo && initial) {
+    renderEvent(demo, { fallback: true });
+    if (demo.status === 'live' || demo.status === 'halftime') {
+      window.setTimeout(() => refresh(), 10000);
+    }
     return demo;
   }
 
-  app.innerHTML = `<div class="event-empty"><h1>Event not found</h1><p>This event has not been published to the canonical event store.</p><a href="/">← Back to UltraWear FC</a></div>`;
+  if (initial) {
+    app.innerHTML = `<div class="event-empty"><h1>Event not found</h1><p>This event has not been published to the canonical event store.</p><a href="/">← Back to UltraWear FC</a></div>`;
+  }
   return null;
 }
 
-loadEvent();
+refresh({ initial: true });
