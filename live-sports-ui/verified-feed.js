@@ -34,10 +34,7 @@ function animateNewMoments(container, previousKeys) {
     const eventId = card.dataset.eventId || '';
     const moment = card.querySelector('[data-moment-id]');
     if (!moment) return;
-    const key = momentKey({
-      id: moment.dataset.momentId,
-      type: card.dataset.moment,
-    }, eventId);
+    const key = momentKey({ id: moment.dataset.momentId, type: card.dataset.moment }, eventId);
     if (!key) return;
     currentKeys.add(key);
     if (!previousKeys.has(key)) {
@@ -55,6 +52,12 @@ async function getEvents(path) {
   return Array.isArray(data?.events) ? data.events : [];
 }
 
+async function fetchVerifiedEvents() {
+  let events = await getEvents('/api/sports/soccer/live');
+  if (!events.length) events = await getEvents('/api/sports/soccer/daily');
+  return events;
+}
+
 export function createLiveFeedController(container) {
   let knownMomentKeys = new Set();
 
@@ -62,11 +65,9 @@ export function createLiveFeedController(container) {
     async refresh() {
       if (!container) return { verified: false, count: 0 };
       try {
-        let events = await getEvents('/api/sports/soccer/live');
-        if (!events.length) events = await getEvents('/api/sports/soccer/daily');
+        const events = await fetchVerifiedEvents();
         if (events.length) {
-          const cards = events.map(toCard);
-          renderMatchFeed(container, cards);
+          renderMatchFeed(container, events.map(toCard));
           knownMomentKeys = animateNewMoments(container, knownMomentKeys);
           return { verified: true, count: events.length };
         }
@@ -80,7 +81,31 @@ export function createLiveFeedController(container) {
   });
 }
 
+export function createLiveSpotlightController(container) {
+  let knownMomentKeys = new Set();
+
+  return Object.freeze({
+    async refresh() {
+      if (!container) return { verified: false, count: 0 };
+      try {
+        const events = await fetchVerifiedEvents();
+        if (events.length) {
+          renderMatchFeed(container, [toCard(events[0])]);
+          knownMomentKeys = animateNewMoments(container, knownMomentKeys);
+          return { verified: true, count: 1 };
+        }
+      } catch {
+        // Preserve the preview card while verified provider configuration is pending.
+      }
+      renderMatchFeed(container, DEMO_MATCHES.slice(0, 1));
+      knownMomentKeys = new Set();
+      return { verified: false, count: 0 };
+    },
+  });
+}
+
 const defaultControllers = new WeakMap();
+const spotlightControllers = new WeakMap();
 
 export async function loadVerifiedSoccerFeed(container) {
   if (!container) return { verified: false, count: 0 };
@@ -88,6 +113,16 @@ export async function loadVerifiedSoccerFeed(container) {
   if (!controller) {
     controller = createLiveFeedController(container);
     defaultControllers.set(container, controller);
+  }
+  return controller.refresh();
+}
+
+export async function loadVerifiedSoccerSpotlight(container) {
+  if (!container) return { verified: false, count: 0 };
+  let controller = spotlightControllers.get(container);
+  if (!controller) {
+    controller = createLiveSpotlightController(container);
+    spotlightControllers.set(container, controller);
   }
   return controller.refresh();
 }
