@@ -1,4 +1,5 @@
 import { getTeamVisual, teamStyle } from './identity.js';
+import { getTeamLogo } from './logo-assets.js';
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>\"']/g, (char) => ({
@@ -8,7 +9,11 @@ function escapeHtml(value) {
 
 function teamBadge(code) {
   const visual = getTeamVisual(code);
-  return `<span class="team-badge" style="${teamStyle(code)}" aria-label="${escapeHtml(visual.name)}">${escapeHtml(code)}</span>`;
+  const logo = getTeamLogo(code);
+  const logoMarkup = logo
+    ? `<img class="team-logo" src="${escapeHtml(logo)}" alt="" loading="lazy" decoding="async" />`
+    : `<span class="team-code">${escapeHtml(code)}</span>`;
+  return `<span class="team-badge" style="${teamStyle(code)}" aria-label="${escapeHtml(visual.name)}">${logoMarkup}</span>`;
 }
 
 export function renderTeamMatchCard(match) {
@@ -17,9 +22,10 @@ export function renderTeamMatchCard(match) {
   const status = escapeHtml(match.statusLabel ?? 'UP NEXT');
   const competition = escapeHtml(match.competition ?? 'Sport');
   const note = escapeHtml(match.note ?? 'Verified live data will appear here.');
+  const intensity = escapeHtml(match.intensity ?? (match.isLive ? 'high' : 'low'));
 
   return `
-    <article class="live-card team-match-card" style="${teamStyle(match.home)}" data-match-card>
+    <article class="live-card team-match-card motion-${intensity}" style="${teamStyle(match.home)};--away-primary:${away.primary};--away-secondary:${away.secondary}" data-match-card data-intensity="${intensity}">
       <div class="card-top">
         <span class="live-dot ${match.isLive ? 'is-live' : 'is-up-next'}">${status}</span>
         <span>${escapeHtml(match.sport ?? 'Sport')} · ${competition}</span>
@@ -37,6 +43,7 @@ export function renderTeamMatchCard(match) {
       </div>
       <div class="match-meta"><span>${note}</span><span>${escapeHtml(match.meta ?? 'Source pending')}</span></div>
       <div class="card-sweep" aria-hidden="true"></div>
+      <div class="momentum-line" aria-hidden="true"><span></span></div>
     </article>`;
 }
 
