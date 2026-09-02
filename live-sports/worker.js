@@ -38,7 +38,9 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
   const playerHistory = createPlayerHistoryStore(env.PLAYER_HISTORY);
   const health = createIngestionHealth({ policy: healthPolicy });
   const propagation = createCanonicalPropagation({ eventStore, indexSync, teamHistory, playerHistory });
-  let worker;
+  const ingestSource = createIngestionRunner({ registry, fetchSource, eventStore: null });
+  let revalidate = () => false;
+
   const ingest = async (sourceId, context = {}) => {
     const startedAt = Date.now();
     const result = await ingestSource(sourceId, context);
@@ -51,11 +53,20 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
     const canonicalEvent = { ...reconciliation.event, moments: momentReconciliation.moments, moment: momentReconciliation.moments.at(-1) ?? null };
     const canonicalResult = { ...result, ...reconciliation, event: canonicalEvent, momentReconciliation, health: healthState, changed: true };
     await propagation.publish(canonicalEvent, canonicalResult);
-    if (canonicalResult.conflicted || momentReconciliation.conflicted) worker.revalidate(sourceId, { eventStatus: canonicalEvent.status, reason: 'conflict' });
+    if (canonicalResult.conflicted || momentReconciliation.conflicted) {
+      revalidate(sourceId, { eventStatus: canonicalEvent.status, reason: 'conflict' });
+    }
     return canonicalResult;
   };
-  const ingestSource = createIngestionRunner({ registry, fetchSource, eventStore: null });
+
   const revalidation = createRevalidationQueue({ ingest });
-  worker = { ingest, revalidate: revalidation.enqueue, drainRevalidation: revalidation.drain, health: health.list, getHealth: health.get };
-  return Object.freeze(worker);
+  revalidate = revalidation.enqueue;
+
+  return Object.freeze({
+    ingest,
+    revalidate: revalidation.enqueue,
+    drainRevalidation: revalidation.drain,
+    health: health.list,
+    getHealth: health.get,
+  });
 }
