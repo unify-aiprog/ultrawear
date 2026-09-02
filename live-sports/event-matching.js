@@ -1,6 +1,6 @@
 /** Provider-neutral event identity matching. */
 
-function normalizeName(value) {
+export function normalizeName(value) {
   return String(value ?? '')
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -15,6 +15,15 @@ function minutesBetween(a, b) {
   const right = Date.parse(b);
   if (!Number.isFinite(left) || !Number.isFinite(right)) return Infinity;
   return Math.abs(left - right) / 60000;
+}
+
+export function canonicalEventIdentity(event) {
+  if (!event?.sport || !event?.startsAt || !event?.home || !event?.away) return null;
+  const kickoff = new Date(event.startsAt).toISOString();
+  const home = normalizeName(event.home.id ?? event.home.name);
+  const away = normalizeName(event.away.id ?? event.away.name);
+  if (!home || !away) return null;
+  return `event:${normalizeName(event.sport)}:${kickoff}:${home}:${away}`;
 }
 
 export function eventMatchScore(left, right, { kickoffWindowMinutes = 180 } = {}) {
