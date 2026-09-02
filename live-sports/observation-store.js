@@ -11,7 +11,7 @@ export function createObservationStore({ put, get, list }) {
 
   return Object.freeze({
     async putObservation(observation) {
-      if (!observation?.entityId || !observation?.sourceId || !observation?.observedAt) {
+      if (!observation?.entityId || !observation?.entityType || !observation?.field || !observation?.sourceId || !observation?.observedAt) {
         throw new TypeError('Observation is required');
       }
       const key = [
@@ -26,10 +26,10 @@ export function createObservationStore({ put, get, list }) {
       return observation;
     },
 
-    async listObservations(entityId, field = null) {
+    async listObservations(entityId, field = null, entityType = 'event') {
       const prefix = field
-        ? `observation:event:${entityId}:${field}:`
-        : `observation:event:${entityId}:`;
+        ? `observation:${entityType}:${entityId}:${field}:`
+        : `observation:${entityType}:${entityId}:`;
       const keys = await list(prefix);
       const observations = [];
       for (const key of keys) {
