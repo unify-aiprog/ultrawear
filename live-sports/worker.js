@@ -9,6 +9,7 @@ import { createSourceRegistry } from './registry.js';
 import { createIngestionRunner } from './ingestion.js';
 import { createKvEventStore } from './event-store.js';
 import { createKvObservationStore } from './observation-store.js';
+import { createKvFactAuditStore } from './fact-audit-store.js';
 import { createEventReconciler } from './event-reconciliation.js';
 import { createMomentReconciler } from './moment-reconciliation.js';
 import { createEventIndexStore } from './event-index.js';
@@ -35,7 +36,8 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
   registry.register(adapter);
   const eventStore = createKvEventStore(env.EVENT_STORE);
   const observationStore = createKvObservationStore(env.OBSERVATION_STORE);
-  const reconciler = createEventReconciler({ eventStore, observationStore, sourceConfidence });
+  const auditStore = createKvFactAuditStore(env.FACT_AUDIT || env.OBSERVATION_STORE);
+  const reconciler = createEventReconciler({ eventStore, observationStore, auditStore, sourceConfidence });
   const momentReconciler = createMomentReconciler({ observationStore, sourceConfidence: ({ sourceId }) => sourceConfidence({ sourceId, sourceType }) });
   const indexSync = createEventIndexSync(createEventIndexStore(env.EVENT_INDEX));
   const teamHistory = createTeamHistoryStore(env.TEAM_HISTORY);
