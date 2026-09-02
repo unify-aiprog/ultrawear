@@ -1,5 +1,6 @@
 import { createLiveSourceRegistry } from '../../../live-sports/live-source-registry.js';
 import { createSportradarSoccerLiveSource } from '../../../live-sports/providers/sportradar-live-source.js';
+import { createBigBallsBasketballAdapter } from '../../../live-sports/providers/bigballs-basketball.js';
 import { combineSportFeeds, selectLiveSportEvents } from '../../../live-sports/multi-sport-feed.js';
 
 function json(body, status = 200, cache = 'public, max-age=1, stale-while-revalidate=5') {
@@ -10,7 +11,13 @@ function json(body, status = 200, cache = 'public, max-age=1, stale-while-revali
 }
 
 function createRegistry(env) {
-  return createLiveSourceRegistry({ sources: [createSportradarSoccerLiveSource(env)] });
+  const basketball = env.BBS_API_KEY ? createBigBallsBasketballAdapter({ apiKey: env.BBS_API_KEY }) : null;
+  return createLiveSourceRegistry({
+    sources: [
+      createSportradarSoccerLiveSource(env),
+      basketball,
+    ].filter(Boolean),
+  });
 }
 
 export async function onRequestGet(context) {
