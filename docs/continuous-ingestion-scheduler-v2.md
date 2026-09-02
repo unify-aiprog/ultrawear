@@ -1,0 +1,1 @@
+The scheduler is provider-neutral. Event status controls baseline cadence; source health modifies cadence; stopping cancels pending timers.
