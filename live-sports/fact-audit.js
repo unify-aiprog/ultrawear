@@ -12,7 +12,7 @@ export function factAuditAction({ before = null, after, previousValue = undefine
   if (!after?.verification) throw new TypeError('after reconciliation is required');
   if (!before) return 'accepted';
   if (after.verification === 'conflicted') return 'conflicted';
-  if (before.verification === 'conflicted') return 'corrected';
+  if (before.verification === 'conflicted' && after.verification !== 'conflicted') return 'corrected';
   if (before.verification !== after.verification && after.verification === 'corroborated') return 'reverified';
   if (previousValue !== undefined && stable(previousValue) !== stable(after.value)) return 'changed';
   return null;
