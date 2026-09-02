@@ -12,7 +12,6 @@ import { createEventIndexStore } from './event-index.js';
 import { createEventIndexSync } from './index-sync.js';
 import { createTeamHistoryStore } from './team-history.js';
 import { createPlayerHistoryStore } from './player-history.js';
-import { normalizePlayerPerformance } from './player-performance.js';
 
 export function createLiveSportsWorker({ env, fetchSource, adapter, follows = [] }) {
   if (!env?.EVENT_STORE) throw new TypeError('EVENT_STORE binding is required');
@@ -35,10 +34,10 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
       if (result.ok && result.event && result.changed) {
         await indexSync.sync(result);
         await teamHistory.put(result.event);
-        for (const performance of result.event.performances || []) {
-          const normalized = normalizePlayerPerformance(performance);
-          await playerHistory.put(result.event, normalized.personId, normalized);
-        }
+        const performances = Array.isArray(result.event.performances) ? result.event.performances : [];
+        await Promise.all(performances.map((performance) =>
+          playerHistory.put(result.event, performance.personId, performance),
+        ));
       }
       return result;
     },
