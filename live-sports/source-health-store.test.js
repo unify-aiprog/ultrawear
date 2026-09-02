@@ -8,6 +8,7 @@ test('durable source health store persists health and revalidation records', asy
     put: async (key, value) => data.set(key, value),
     get: async (key) => data.get(key) ?? null,
     list: async (prefix) => [...data.entries()].filter(([key]) => key.startsWith(prefix)).map(([, value]) => value),
+    remove: async (key) => data.delete(key),
   });
 
   const health = { sourceId: 'source-a', status: 'healthy', checkedAt: '2026-09-02T12:00:00.000Z' };
@@ -19,6 +20,9 @@ test('durable source health store persists health and revalidation records', asy
   assert.deepEqual(await store.getHealth('source-a'), health);
   assert.deepEqual(await store.listHealth(), [health]);
   assert.deepEqual(await store.getRevalidation('source-a'), item);
+  assert.deepEqual(await store.listRevalidations(), [item]);
+  await store.deleteRevalidation('source-a');
+  assert.equal(await store.getRevalidation('source-a'), null);
 });
 
 test('durable store validates source identifiers', async () => {
@@ -26,4 +30,5 @@ test('durable store validates source identifiers', async () => {
   await assert.rejects(() => store.putHealth({}), /sourceId is required/);
   await assert.rejects(() => store.putRevalidation({}), /sourceId is required/);
   assert.equal(await store.getHealth(''), null);
+  await assert.rejects(() => store.deleteRevalidation('source-a'), /remove is required/);
 });
