@@ -19,12 +19,27 @@ export function createLiveSourceRegistry({ sources = [] } = {}) {
     get(id) { return entries.get(id) ?? null; },
     list() { return [...entries.values()]; },
     async fetchAll(context = {}) {
-      const results = await Promise.all(entries.values().map(async (source) => {
+      const settled = await Promise.allSettled([...entries.values()].map(async (source) => {
         const payload = await source.fetch(context);
         const events = Array.isArray(payload) ? payload : [];
-        return { sourceId: source.id, sport: source.sport ?? null, events: events.map((item) => source.normalize(item, context)).filter(Boolean) };
+        return {
+          sourceId: source.id,
+          sport: source.sport ?? null,
+          events: events.map((item) => source.normalize(item, context)).filter(Boolean),
+        };
       }));
-      return results;
+
+      return settled.map((result, index) => {
+        const source = [...entries.values()][index];
+        if (result.status === 'fulfilled') return result.value;
+        return {
+          sourceId: source.id,
+          sport: source.sport ?? null,
+          events: [],
+          ok: false,
+          error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+        };
+      });
     },
   });
 }
