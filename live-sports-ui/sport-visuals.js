@@ -20,31 +20,32 @@ const VISUALS = Object.freeze({
   running: {
     src: 'https://images.unsplash.com/photo-1744060204728-f68e434a3edf?auto=format&fit=crop&fm=jpg&q=82&w=2200',
     alt: 'Runner moving through warm evening light on a trackside road.',
-    credit: 'Unsplash contributor',
+    credit: 'Jorge Alberto Vega Barrera / Unsplash',
     focal: '52% 52%',
   },
 });
 
 const sport = window.location.pathname.split('/').filter(Boolean)[0]?.toLowerCase() || 'football';
 const visual = VISUALS[sport];
-if (!visual) return;
 
-const hero = document.querySelector('#sport-hero-image');
-const heroLink = document.querySelector('#sport-hero-link');
-const credit = document.querySelector('#sport-image-credit');
-const storyImages = document.querySelectorAll('.sport-story-image img');
+if (visual) {
+  const hero = document.querySelector('#sport-hero-image');
+  const heroLink = document.querySelector('#sport-hero-link');
+  const credit = document.querySelector('#sport-image-credit');
+  const storyImages = document.querySelectorAll('.sport-story-image img');
 
-if (hero) {
-  hero.src = visual.src;
-  hero.alt = visual.alt;
-  hero.style.objectPosition = visual.focal;
+  if (hero) {
+    hero.src = visual.src;
+    hero.alt = visual.alt;
+    hero.style.objectPosition = visual.focal;
+  }
+  if (heroLink) heroLink.href = visual.src;
+  if (credit) credit.textContent = visual.credit;
+  storyImages.forEach((image, index) => {
+    image.src = visual.src;
+    image.alt = visual.alt;
+    image.style.objectPosition = index === 0 ? visual.focal : `${index * 24 + 20}% 50%`;
+  });
+
+  document.documentElement.dataset.sportVisual = sport;
 }
-if (heroLink) heroLink.href = visual.src;
-if (credit) credit.textContent = visual.credit;
-storyImages.forEach((image, index) => {
-  image.src = visual.src;
-  image.alt = visual.alt;
-  image.style.objectPosition = index === 0 ? visual.focal : `${index * 24 + 20}% 50%`;
-});
-
-document.documentElement.dataset.sportVisual = sport;
