@@ -11,9 +11,7 @@ function memoryScheduler(now, { claim = null } = {}) {
       data.set(sourceId, item);
       return item;
     },
-    async due(at = now()) {
-      return [...data.values()].filter((item) => Date.parse(item.scheduledAt) <= at);
-    },
+    async due(at = now()) { return [...data.values()].filter((item) => Date.parse(item.scheduledAt) <= at); },
     ...(claim ? { claim } : {}),
   };
 }
@@ -52,15 +50,15 @@ test('durable coordinator skips a due item when atomic claim is rejected', async
   assert.deepEqual(results, [{ sourceId: 'source-c', ok: false, claimed: false, skipped: true }]);
 });
 
-test('durable coordinator executes and reschedules a successfully claimed item', async () => {
+test('durable coordinator passes lease options to an atomic claim and reschedules after success', async () => {
   const now = () => Date.parse('2026-09-02T12:00:00.000Z');
   const claims = [];
-  const scheduler = memoryScheduler(now, { claim: async (sourceId, at, leaseSeconds) => { claims.push([sourceId, at, leaseSeconds]); return true; } });
+  const scheduler = memoryScheduler(now, { claim: async (sourceId, options) => { claims.push([sourceId, options]); return true; } });
   await scheduler.schedule('source-d', { eventStatus: 'scheduled' }, 0);
   const coordinator = createDurableIngestionCoordinator({ scheduler, now, leaseSeconds: 45, ingest: async () => ({ ok: true, event: { status: 'live' }, health: { status: 'healthy' } }) });
   const results = await coordinator.runDue(now());
   assert.equal(results[0].claimed, true);
-  assert.deepEqual(claims, [['source-d', now(), 45]]);
+  assert.deepEqual(claims, [['source-d', { at: now(), leaseSeconds: 45 }]]);
   assert.equal(scheduler.data.get('source-d').context.eventStatus, 'live');
   assert.ok(Date.parse(scheduler.data.get('source-d').scheduledAt) > now());
 });
