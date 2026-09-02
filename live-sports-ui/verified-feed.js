@@ -17,8 +17,8 @@ function toCard(event) {
     isLive,
     intensity: isLive ? 'high' : 'low',
     score: event.score,
-    moment: event.moment ? { ...event.moment, verified: true } : null,
-    note: event.source?.provider === 'Sportradar' ? 'Verified Sportradar feed' : 'Verified sports feed',
+    moment: event.moment ? { ...event.moment } : null,
+    note: 'Verified sports feed',
     meta: event.updatedAt ? `Updated ${new Date(event.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Verified feed',
   };
 }
@@ -45,17 +45,19 @@ function animateNewMoments(container, previousKeys) {
   return currentKeys;
 }
 
-async function getEvents(path) {
-  const response = await fetch(path, { headers: { accept: 'application/json' } });
+async function getEvents() {
+  const response = await fetch('/api/sports/live', { headers: { accept: 'application/json' } });
   if (!response.ok) throw new Error(`Feed unavailable: ${response.status}`);
   const data = await response.json();
-  return Array.isArray(data?.events) ? data.events : [];
+  return { events: Array.isArray(data?.events) ? data.events : [], verified: data?.verified === true };
 }
 
+let sharedRequest = null;
 async function fetchVerifiedEvents() {
-  let events = await getEvents('/api/sports/soccer/live');
-  if (!events.length) events = await getEvents('/api/sports/soccer/daily');
-  return events;
+  if (!sharedRequest) {
+    sharedRequest = getEvents().finally(() => { sharedRequest = null; });
+  }
+  return sharedRequest;
 }
 
 export function createLiveFeedController(container) {
@@ -65,14 +67,14 @@ export function createLiveFeedController(container) {
     async refresh() {
       if (!container) return { verified: false, count: 0 };
       try {
-        const events = await fetchVerifiedEvents();
-        if (events.length) {
+        const { events, verified } = await fetchVerifiedEvents();
+        if (verified && events.length) {
           renderMatchFeed(container, events.map(toCard));
           knownMomentKeys = animateNewMoments(container, knownMomentKeys);
           return { verified: true, count: events.length };
         }
       } catch {
-        // Keep the demo visible while provider credentials/feed configuration is pending.
+        // Keep the preview visible while verified feed configuration is unavailable.
       }
       renderMatchFeed(container, DEMO_MATCHES);
       knownMomentKeys = new Set();
@@ -88,18 +90,18 @@ export function createLiveSpotlightController(container) {
     async refresh() {
       if (!container) return { verified: false, count: 0 };
       try {
-        const events = await fetchVerifiedEvents();
-        if (events.length) {
+        const { events, verified } = await fetchVerifiedEvents();
+        if (verified && events.length) {
           renderMatchFeed(container, [toCard(events[0])]);
           knownMomentKeys = animateNewMoments(container, knownMomentKeys);
-          return { verified: true, count: 1 };
+          return { verified: true, count: 1, sport: events[0].sport };
         }
       } catch {
-        // Preserve the preview card while verified provider configuration is pending.
+        // Preserve the preview card while verified feed configuration is unavailable.
       }
       renderMatchFeed(container, DEMO_MATCHES.slice(0, 1));
       knownMomentKeys = new Set();
-      return { verified: false, count: 0 };
+      return { verified: false, count: 0, sport: DEMO_MATCHES[0]?.sport };
     },
   });
 }
