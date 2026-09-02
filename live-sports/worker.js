@@ -18,6 +18,7 @@ import { createPlayerHistoryStore } from './player-history.js';
 import { createIngestionHealth } from './ingestion-health.js';
 import { createCanonicalPropagation } from './propagation.js';
 import { createRevalidationQueue } from './revalidation.js';
+import { createKvSourceHealthStore } from './source-health-store.js';
 
 export function createLiveSportsWorker({ env, fetchSource, adapter, follows = [], sourceType = 'open', sourceConfidence = () => 0.7, healthPolicy } = {}) {
   if (!env?.EVENT_STORE) throw new TypeError('EVENT_STORE binding is required');
@@ -36,15 +37,15 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
   const indexSync = createEventIndexSync(createEventIndexStore(env.EVENT_INDEX));
   const teamHistory = createTeamHistoryStore(env.TEAM_HISTORY);
   const playerHistory = createPlayerHistoryStore(env.PLAYER_HISTORY);
-  const health = createIngestionHealth({ policy: healthPolicy });
+  const sourceHealthStore = env.SOURCE_HEALTH ? createKvSourceHealthStore(env.SOURCE_HEALTH) : null;
+  const health = createIngestionHealth({ policy: healthPolicy, store: sourceHealthStore });
   const propagation = createCanonicalPropagation({ eventStore, indexSync, teamHistory, playerHistory });
   const ingestSource = createIngestionRunner({ registry, fetchSource, eventStore: null });
-  let revalidate = () => false;
 
   const ingest = async (sourceId, context = {}) => {
     const startedAt = Date.now();
     const result = await ingestSource(sourceId, context);
-    const healthState = health.record({ ...result, latencyMs: Date.now() - startedAt });
+    const healthState = await health.record({ ...result, latencyMs: Date.now() - startedAt });
     if (!result.ok || !result.event) return { ...result, health: healthState };
 
     const reconciliation = await reconciler.reconcile({ sourceId, event: result.event, observedAt: result.observedAt, sourceType });
@@ -54,18 +55,19 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
     const canonicalResult = { ...result, ...reconciliation, event: canonicalEvent, momentReconciliation, health: healthState, changed: true };
     await propagation.publish(canonicalEvent, canonicalResult);
     if (canonicalResult.conflicted || momentReconciliation.conflicted) {
-      revalidate(sourceId, { eventStatus: canonicalEvent.status, reason: 'conflict' });
+      await revalidation.enqueue(sourceId, { eventStatus: canonicalEvent.status, reason: 'conflict' });
     }
     return canonicalResult;
   };
 
-  const revalidation = createRevalidationQueue({ ingest });
-  revalidate = revalidation.enqueue;
+  const revalidation = createRevalidationQueue({ ingest, store: sourceHealthStore });
+  const hydrate = async () => Promise.all([health.hydrate(), revalidation.hydrate()]);
 
   return Object.freeze({
     ingest,
     revalidate: revalidation.enqueue,
     drainRevalidation: revalidation.drain,
+    hydrate,
     health: health.list,
     getHealth: health.get,
   });
