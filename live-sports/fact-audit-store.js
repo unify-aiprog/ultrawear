@@ -17,13 +17,12 @@ export function createFactAuditStore({ put, get, list } = {}) {
       return typeof value === 'string' ? JSON.parse(value) : value;
     },
     async listAudits({ entityId = null, field = null } = {}) {
-      const prefix = entityId ? `fact-audit:${entityId}` : 'fact-audit:';
-      const keys = await list(prefix);
+      const keys = await list('fact-audit:');
       const records = [];
       for (const key of keys) {
         const value = await get(key);
         const record = typeof value === 'string' ? JSON.parse(value) : value;
-        if (record && (!field || record.field === field)) records.push(record);
+        if (record && (!entityId || record.entityId === entityId) && (!field || record.field === field)) records.push(record);
       }
       return records.sort((a, b) => a.observedAt.localeCompare(b.observedAt));
     },
