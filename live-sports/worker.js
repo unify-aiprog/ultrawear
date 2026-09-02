@@ -19,8 +19,10 @@ import { createIngestionHealth } from './ingestion-health.js';
 import { createCanonicalPropagation } from './propagation.js';
 import { createRevalidationQueue } from './revalidation.js';
 import { createKvSourceHealthStore } from './source-health-store.js';
+import { createDurableScheduler } from './durable-scheduler.js';
+import { createDurableIngestionCoordinator } from './durable-ingestion.js';
 
-export function createLiveSportsWorker({ env, fetchSource, adapter, follows = [], sourceType = 'open', sourceConfidence = () => 0.7, healthPolicy } = {}) {
+export function createLiveSportsWorker({ env, fetchSource, adapter, follows = [], sourceType = 'open', sourceConfidence = () => 0.7, healthPolicy, schedulerStore = null, now = () => Date.now(), durableScheduler = null } = {}) {
   if (!env?.EVENT_STORE) throw new TypeError('EVENT_STORE binding is required');
   if (!env?.OBSERVATION_STORE) throw new TypeError('OBSERVATION_STORE binding is required');
   if (!env?.EVENT_INDEX) throw new TypeError('EVENT_INDEX binding is required');
@@ -42,6 +44,7 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
   const propagation = createCanonicalPropagation({ eventStore, indexSync, teamHistory, playerHistory });
   const ingestSource = createIngestionRunner({ registry, fetchSource, eventStore: null });
 
+  let revalidation;
   const ingest = async (sourceId, context = {}) => {
     const startedAt = Date.now();
     const result = await ingestSource(sourceId, context);
@@ -60,7 +63,12 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
     return canonicalResult;
   };
 
-  const revalidation = createRevalidationQueue({ ingest, store: sourceHealthStore });
+  revalidation = createRevalidationQueue({ ingest, store: sourceHealthStore });
+
+  const scheduler = durableScheduler ?? (schedulerStore ? createDurableScheduler({ store: schedulerStore, now }) : null);
+  const durable = scheduler
+    ? createDurableIngestionCoordinator({ scheduler, ingest, now })
+    : null;
   const hydrate = async () => Promise.all([health.hydrate(), revalidation.hydrate()]);
 
   return Object.freeze({
@@ -70,5 +78,8 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
     hydrate,
     health: health.list,
     getHealth: health.get,
+    schedule: durable?.schedule,
+    runScheduled: durable?.runDue,
+    listScheduled: scheduler?.list,
   });
 }
