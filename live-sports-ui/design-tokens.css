@@ -1,0 +1,51 @@
+:root {
+  --uw-bg: var(--bg, #f2f0e9);
+  --uw-surface: #dedbd2;
+  --uw-surface-soft: #d8d5cc;
+  --uw-ink: var(--ink, #11110f);
+  --uw-muted: var(--muted, #696861);
+  --uw-line: var(--line, #d6d3ca);
+  --uw-accent: var(--accent, #d7ff3f);
+  --uw-dark: var(--dark, #151515);
+  --uw-dark-line: rgba(244, 241, 232, .14);
+  --uw-dark-soft: rgba(244, 241, 232, .045);
+  --uw-radius: 0;
+  --uw-radius-sm: 0;
+  --uw-max: var(--max, 1280px);
+  --uw-display: 'Space Grotesk', sans-serif;
+  --uw-body: 'DM Sans', sans-serif;
+  --uw-tight: -.075em;
+}
+
+.event-page-body,
+.person-page-body {
+  background: var(--uw-bg);
+  color: var(--uw-ink);
+  font-family: var(--uw-body);
+}
+
+.person-page,
+.event-shell {
+  max-width: var(--uw-max);
+}
+
+.person-page h1,
+.person-page h2,
+.event-shell h1,
+.event-shell h2 {
+  font-family: var(--uw-display);
+  letter-spacing: var(--uw-tight);
+}
+
+.person-section,
+.event-panel {
+  border-color: var(--uw-line);
+  border-radius: var(--uw-radius);
+  background: transparent;
+}
+
+.person-tags span,
+.event-nav a,
+.event-live-note {
+  border-radius: var(--uw-radius-sm);
+}
