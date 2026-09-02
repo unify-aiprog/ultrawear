@@ -26,6 +26,7 @@ export async function onRequestPost(context) {
 
   const entityType = typeof body?.entityType === 'string' ? body.entityType.trim().slice(0, 40) : 'entity';
   const label = typeof body?.label === 'string' ? body.label.trim().slice(0, 160) : entityId;
-  const item = await createTrendStore(namespace).record({ entityId, entityType, label });
+  const signal = typeof body?.signal === 'string' ? body.signal.trim().toLowerCase() : 'view';
+  const item = await createTrendStore(namespace).record({ entityId, entityType, label, signal });
   return json({ ok: true, item }, 202, 'no-store');
 }
