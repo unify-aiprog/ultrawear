@@ -7,11 +7,16 @@ export function createScheduledExecution({ worker } = {}) {
 
   return Object.freeze({
     async run(at = Date.now()) {
+      if (typeof worker.hydrate === 'function') await worker.hydrate();
       const results = await worker.runScheduled(at);
+      const revalidation = typeof worker.drainRevalidation === 'function'
+        ? await worker.drainRevalidation()
+        : { results: [], errors: [], pending: 0 };
       return {
         ok: true,
         at: new Date(at).toISOString(),
         results: Array.isArray(results) ? results : [],
+        revalidation,
       };
     },
   });
