@@ -97,7 +97,7 @@ export function createLiveSpotlightController(container) {
           return { verified: true, count: 1, sport: events[0].sport };
         }
       } catch {
-        // Preserve the preview card while verified feed configuration is unavailable.
+        // Preserve the preview card while verified provider configuration is pending.
       }
       renderMatchFeed(container, DEMO_MATCHES.slice(0, 1));
       knownMomentKeys = new Set();
@@ -109,7 +109,7 @@ export function createLiveSpotlightController(container) {
 const defaultControllers = new WeakMap();
 const spotlightControllers = new WeakMap();
 
-export async function loadVerifiedSoccerFeed(container) {
+export async function loadVerifiedLiveFeed(container) {
   if (!container) return { verified: false, count: 0 };
   let controller = defaultControllers.get(container);
   if (!controller) {
@@ -119,7 +119,7 @@ export async function loadVerifiedSoccerFeed(container) {
   return controller.refresh();
 }
 
-export async function loadVerifiedSoccerSpotlight(container) {
+export async function loadVerifiedLiveSpotlight(container) {
   if (!container) return { verified: false, count: 0 };
   let controller = spotlightControllers.get(container);
   if (!controller) {
