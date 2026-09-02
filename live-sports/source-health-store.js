@@ -1,6 +1,6 @@
 /** Durable KV boundary for source health and revalidation state. */
 
-export function createSourceHealthStore({ put, get, list = null } = {}) {
+export function createSourceHealthStore({ put, get, list = null, remove = null } = {}) {
   if (typeof put !== 'function' || typeof get !== 'function') {
     throw new TypeError('Source health store requires put and get functions');
   }
@@ -29,8 +29,14 @@ export function createSourceHealthStore({ put, get, list = null } = {}) {
       if (!sourceId) return null;
       return get(`revalidation:${sourceId}`);
     },
-    async deleteRevalidation(sourceId, remove) {
-      if (!sourceId || typeof remove !== 'function') throw new TypeError('sourceId and remove are required');
+    async listRevalidations() {
+      if (typeof list !== 'function') return [];
+      const values = await list('revalidation:');
+      return Array.isArray(values) ? values : [];
+    },
+    async deleteRevalidation(sourceId) {
+      if (!sourceId) throw new TypeError('sourceId is required');
+      if (typeof remove !== 'function') throw new TypeError('remove is required');
       await remove(`revalidation:${sourceId}`);
     },
   });
