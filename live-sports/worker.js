@@ -10,6 +10,7 @@ import { createIngestionRunner } from './ingestion.js';
 import { createKvEventStore } from './event-store.js';
 import { createKvObservationStore } from './observation-store.js';
 import { createEventReconciler } from './event-reconciliation.js';
+import { createMomentReconciler } from './moment-reconciliation.js';
 import { createEventIndexStore } from './event-index.js';
 import { createEventIndexSync } from './index-sync.js';
 import { createTeamHistoryStore } from './team-history.js';
@@ -28,6 +29,10 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
   const eventStore = createKvEventStore(env.EVENT_STORE);
   const observationStore = createKvObservationStore(env.OBSERVATION_STORE);
   const reconciler = createEventReconciler({ eventStore, observationStore, sourceConfidence });
+  const momentReconciler = createMomentReconciler({
+    observationStore,
+    sourceConfidence: ({ sourceId }) => sourceConfidence({ sourceId, sourceType }),
+  });
   const indexSync = createEventIndexSync(createEventIndexStore(env.EVENT_INDEX));
   const teamHistory = createTeamHistoryStore(env.TEAM_HISTORY);
   const playerHistory = createPlayerHistoryStore(env.PLAYER_HISTORY);
@@ -46,9 +51,33 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
         observedAt: result.observedAt,
         sourceType,
       });
-      const canonicalResult = { ...result, ...reconciliation, changed: true };
+      const incomingMoments = Array.isArray(result.event.moments)
+        ? result.event.moments
+        : result.event.moment
+          ? [result.event.moment]
+          : [];
+      const momentReconciliation = await momentReconciler.reconcile({
+        eventId: reconciliation.canonicalId,
+        incomingMoments,
+        existingMoments: reconciliation.event.moments ?? [],
+        sourceId,
+        observedAt: result.observedAt,
+      });
+      const canonicalEvent = {
+        ...reconciliation.event,
+        moments: momentReconciliation.moments,
+        moment: momentReconciliation.moments.at(-1) ?? null,
+      };
+      const canonicalResult = {
+        ...result,
+        ...reconciliation,
+        event: canonicalEvent,
+        momentReconciliation,
+        changed: true,
+      };
 
       if (canonicalResult.event) {
+        await eventStore.putEvent(canonicalResult.event);
         await indexSync.sync(canonicalResult);
         await teamHistory.put(canonicalResult.event);
         const performances = Array.isArray(canonicalResult.event.performances) ? canonicalResult.event.performances : [];
