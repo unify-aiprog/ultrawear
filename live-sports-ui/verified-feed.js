@@ -23,6 +23,31 @@ function toCard(event) {
   };
 }
 
+function momentKey(moment, eventId) {
+  if (!moment) return null;
+  return `${eventId}:${moment.id ?? `${moment.type}:${moment.occurredAt ?? moment.timestamp ?? moment.minute ?? ''}`}`;
+}
+
+function animateNewMoments(container, previousKeys) {
+  const currentKeys = new Set();
+  container.querySelectorAll('[data-match-card]').forEach((card) => {
+    const eventId = card.dataset.eventId || '';
+    const moment = card.querySelector('[data-moment-id]');
+    if (!moment) return;
+    const key = momentKey({
+      id: moment.dataset.momentId,
+      type: card.dataset.moment,
+    }, eventId);
+    if (!key) return;
+    currentKeys.add(key);
+    if (!previousKeys.has(key)) {
+      moment.classList.add('moment-enter');
+      window.setTimeout(() => moment.classList.remove('moment-enter'), 900);
+    }
+  });
+  return currentKeys;
+}
+
 async function getEvents(path) {
   const response = await fetch(path, { headers: { accept: 'application/json' } });
   if (!response.ok) throw new Error(`Feed unavailable: ${response.status}`);
@@ -30,18 +55,39 @@ async function getEvents(path) {
   return Array.isArray(data?.events) ? data.events : [];
 }
 
+export function createLiveFeedController(container) {
+  let knownMomentKeys = new Set();
+
+  return Object.freeze({
+    async refresh() {
+      if (!container) return { verified: false, count: 0 };
+      try {
+        let events = await getEvents('/api/sports/soccer/live');
+        if (!events.length) events = await getEvents('/api/sports/soccer/daily');
+        if (events.length) {
+          const cards = events.map(toCard);
+          renderMatchFeed(container, cards);
+          knownMomentKeys = animateNewMoments(container, knownMomentKeys);
+          return { verified: true, count: events.length };
+        }
+      } catch {
+        // Keep the demo visible while provider credentials/feed configuration is pending.
+      }
+      renderMatchFeed(container, DEMO_MATCHES);
+      knownMomentKeys = new Set();
+      return { verified: false, count: 0 };
+    },
+  });
+}
+
+const defaultControllers = new WeakMap();
+
 export async function loadVerifiedSoccerFeed(container) {
   if (!container) return { verified: false, count: 0 };
-  try {
-    let events = await getEvents('/api/sports/soccer/live');
-    if (!events.length) events = await getEvents('/api/sports/soccer/daily');
-    if (events.length) {
-      renderMatchFeed(container, events.map(toCard));
-      return { verified: true, count: events.length };
-    }
-  } catch {
-    // Keep the demo visible while provider credentials/feed configuration is pending.
+  let controller = defaultControllers.get(container);
+  if (!controller) {
+    controller = createLiveFeedController(container);
+    defaultControllers.set(container, controller);
   }
-  renderMatchFeed(container, DEMO_MATCHES);
-  return { verified: false, count: 0 };
+  return controller.refresh();
 }
