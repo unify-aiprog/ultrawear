@@ -1,0 +1,1 @@
+Source health is operational metadata. It determines freshness and polling cadence, while the knowledge ledger determines whether sports facts are corroborated or verified.
