@@ -19,6 +19,7 @@ import { createIngestionHealth } from './ingestion-health.js';
 import { createCanonicalPropagation } from './propagation.js';
 import { createRevalidationQueue } from './revalidation.js';
 import { createKvSourceHealthStore } from './source-health-store.js';
+import { createKvDurableScheduler } from './kv-durable-scheduler.js';
 import { createDurableScheduler } from './durable-scheduler.js';
 import { createDurableIngestionCoordinator } from './durable-ingestion.js';
 
@@ -65,7 +66,9 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
 
   revalidation = createRevalidationQueue({ ingest, store: sourceHealthStore });
 
-  const scheduler = durableScheduler ?? (schedulerStore ? createDurableScheduler({ store: schedulerStore, now }) : null);
+  const scheduler = durableScheduler
+    ?? (schedulerStore ? createDurableScheduler({ store: schedulerStore, now }) : null)
+    ?? (env.POLL_SCHEDULE ? createKvDurableScheduler(env.POLL_SCHEDULE, { now }) : null);
   const durable = scheduler
     ? createDurableIngestionCoordinator({ scheduler, ingest, now })
     : null;
