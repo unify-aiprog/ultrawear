@@ -1,5 +1,6 @@
 import { getTeamVisual, teamStyle } from './identity.js';
 import { getTeamLogo } from './logo-assets.js';
+import { isHighValueMoment, momentClass, normalizeMoment } from './moments.js';
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>\"']/g, (char) => ({
@@ -16,6 +17,17 @@ function teamBadge(code) {
   return `<span class="team-badge" style="${teamStyle(code)}" aria-label="${escapeHtml(visual.name)}">${logoMarkup}</span>`;
 }
 
+function renderMoment(moment) {
+  const normalized = normalizeMoment(moment);
+  if (!normalized) return '';
+  const verifiedClass = normalized.verified ? ' is-verified' : ' is-demo';
+  const announce = isHighValueMoment(normalized) ? ' aria-live="polite"' : '';
+  return `<div class="match-moment ${momentClass(normalized)}${verifiedClass}"${announce}>
+    <span class="moment-label">${escapeHtml(normalized.label)}</span>
+    <span>${escapeHtml(normalized.verified ? 'Verified live event' : 'Preview event — not live')}</span>
+  </div>`;
+}
+
 export function renderTeamMatchCard(match) {
   const home = getTeamVisual(match.home);
   const away = getTeamVisual(match.away);
@@ -23,9 +35,12 @@ export function renderTeamMatchCard(match) {
   const competition = escapeHtml(match.competition ?? 'Sport');
   const note = escapeHtml(match.note ?? 'Verified live data will appear here.');
   const intensity = escapeHtml(match.intensity ?? (match.isLive ? 'high' : 'low'));
+  const moment = renderMoment(match.moment);
+  const normalizedMoment = normalizeMoment(match.moment);
+  const momentData = normalizedMoment ? ` data-moment="${escapeHtml(normalizedMoment.type)}"` : '';
 
   return `
-    <article class="live-card team-match-card motion-${intensity}" style="${teamStyle(match.home)};--away-primary:${away.primary};--away-secondary:${away.secondary}" data-match-card data-intensity="${intensity}">
+    <article class="live-card team-match-card motion-${intensity} ${normalizedMoment ? momentClass(normalizedMoment) : ''}" style="${teamStyle(match.home)};--away-primary:${away.primary};--away-secondary:${away.secondary}" data-match-card data-intensity="${intensity}"${momentData}>
       <div class="card-top">
         <span class="live-dot ${match.isLive ? 'is-live' : 'is-up-next'}">${status}</span>
         <span>${escapeHtml(match.sport ?? 'Sport')} · ${competition}</span>
@@ -41,6 +56,7 @@ export function renderTeamMatchCard(match) {
           <strong>${escapeHtml(match.away)}</strong>
         </div>
       </div>
+      ${moment}
       <div class="match-meta"><span>${note}</span><span>${escapeHtml(match.meta ?? 'Source pending')}</span></div>
       <div class="card-sweep" aria-hidden="true"></div>
       <div class="momentum-line" aria-hidden="true"><span></span></div>
