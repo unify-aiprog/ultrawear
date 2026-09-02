@@ -13,7 +13,7 @@ function normalizeHistory(history, limit) {
     .slice(0, limit);
 }
 
-export async function onRequestGet({ params, env }) {
+export async function onRequestGet({ request, params, env }) {
   const personId = clean(params?.id);
   if (!personId) return jsonError('Person id is required', 400);
   if (!env?.PERSON_STORE) return jsonError('Person store is not configured', 503);
@@ -28,7 +28,7 @@ export async function onRequestGet({ params, env }) {
     return jsonError('Stored person data is invalid', 500);
   }
 
-  const requestedLimit = Number.parseInt(params?.limit, 10);
+  const requestedLimit = Number.parseInt(new URL(request.url).searchParams.get('limit') || '', 10);
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 20) : 10;
 
   let performances = Array.isArray(person.performances) ? person.performances : [];
