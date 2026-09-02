@@ -11,11 +11,14 @@ import { createKvEventStore } from './event-store.js';
 import { createEventIndexStore } from './event-index.js';
 import { createEventIndexSync } from './index-sync.js';
 import { createTeamHistoryStore } from './team-history.js';
+import { createPlayerHistoryStore } from './player-history.js';
+import { normalizePlayerPerformance } from './player-performance.js';
 
 export function createLiveSportsWorker({ env, fetchSource, adapter, follows = [] }) {
   if (!env?.EVENT_STORE) throw new TypeError('EVENT_STORE binding is required');
   if (!env?.EVENT_INDEX) throw new TypeError('EVENT_INDEX binding is required');
   if (!env?.TEAM_HISTORY) throw new TypeError('TEAM_HISTORY binding is required');
+  if (!env?.PLAYER_HISTORY) throw new TypeError('PLAYER_HISTORY binding is required');
   if (!adapter) throw new TypeError('Source adapter is required');
 
   const registry = createSourceRegistry({ follows });
@@ -23,6 +26,7 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
   const eventStore = createKvEventStore(env.EVENT_STORE);
   const indexSync = createEventIndexSync(createEventIndexStore(env.EVENT_INDEX));
   const teamHistory = createTeamHistoryStore(env.TEAM_HISTORY);
+  const playerHistory = createPlayerHistoryStore(env.PLAYER_HISTORY);
   const ingestSource = createIngestionRunner({ registry, fetchSource, eventStore });
 
   return Object.freeze({
@@ -31,6 +35,10 @@ export function createLiveSportsWorker({ env, fetchSource, adapter, follows = []
       if (result.ok && result.event && result.changed) {
         await indexSync.sync(result);
         await teamHistory.put(result.event);
+        for (const performance of result.event.performances || []) {
+          const normalized = normalizePlayerPerformance(performance);
+          await playerHistory.put(result.event, normalized.personId, normalized);
+        }
       }
       return result;
     },
