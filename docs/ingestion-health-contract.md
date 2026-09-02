@@ -1,0 +1,1 @@
+Operational source health is separate from fact verification. Freshness and failure state controls polling cadence; cross-source observations control verification.
