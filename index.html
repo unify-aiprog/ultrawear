@@ -22,12 +22,18 @@
     <section id="top" class="hero" aria-labelledby="hero-title"><div class="hero-copy"><p class="eyebrow"><span class="pulse"></span> THE NEW SPORTS CULTURE</p><h1 id="hero-title">PLAY<br /><em>FOR</em><br />MORE.</h1><p class="lede">Sport is bigger than the score. UltraWear FC connects the game, the culture and the people around it.</p><div class="actions"><a class="button primary" href="#live">Enter the game <span>↗</span></a><a class="button ghost" href="#community">Join the community</a></div></div><div class="hero-art" aria-hidden="true"><div class="orb"></div><div class="ring ring-a"></div><div class="ring ring-b"></div><div class="hero-label">FC<br /><small>FOR COMMUNITY</small></div></div></section>
     <section class="ticker" aria-label="UltraWear message"><div>FOOTBALL</div><div>COMMUNITY</div><div>CULTURE</div><div>SPORTS</div><div>FORWARD</div><div>FOOTBALL</div><div>COMMUNITY</div></section>
 
-    <section id="trending" class="section" aria-labelledby="trending-title">
-      <div class="section-head"><div><p class="eyebrow">COMMUNITY SIGNAL</p><h2 id="trending-title">TRENDING <span>NOW.</span></h2></div><span class="text-link" aria-hidden="true">Live interest ↗</span></div>
-      <div id="trending-card" class="live-card featured" style="min-height:220px" aria-live="polite">
-        <div class="card-top"><span class="live-dot">TRENDING</span><span>Community interest</span></div>
-        <div><h3 style="font-size:clamp(28px,4vw,54px);margin:18px 0 8px">Building the signal.</h3><p>As people search, open and watch sports entities, UltraWear will surface the subjects gaining attention.</p></div>
-        <div class="match-meta"><span>Aggregated · no personal profiles</span><span>Updating automatically</span></div>
+    <section id="trending" class="section pulse-section" aria-labelledby="trending-title">
+      <div class="section-head"><div><p class="eyebrow">COMMUNITY SIGNAL</p><h2 id="trending-title">WHAT'S <span>HAPPENING.</span></h2></div><span class="text-link" aria-hidden="true">Live interest ↗</span></div>
+      <div class="pulse-grid">
+        <article id="trending-card" class="live-card featured" style="min-height:220px" aria-live="polite">
+          <div class="card-top"><span class="live-dot">TRENDING</span><span>Community interest</span></div>
+          <div><h3 style="font-size:clamp(28px,4vw,54px);margin:18px 0 8px">Building the signal.</h3><p>As people search, open and watch sports entities, UltraWear will surface the subjects gaining attention.</p></div>
+          <div class="match-meta"><span>Aggregated · no personal profiles</span><span>Updating automatically</span></div>
+        </article>
+        <div class="pulse-match" aria-live="polite">
+          <div class="card-top"><span class="live-dot is-live" id="spotlight-status">LIVE MATCH</span><span id="spotlight-meta">Football · verified feed</span></div>
+          <div id="live-spotlight-card"><article class="live-card featured loading-card"><div class="score"><strong>LOADING</strong><b>—</b><strong>LIVE</strong></div><div class="match-meta"><span>Checking verified feed</span><span>UltraWear</span></div></article></div>
+        </div>
       </div>
     </section>
 
@@ -37,13 +43,16 @@
     <section id="community" class="community" aria-labelledby="community-title"><div class="community-mark" aria-hidden="true">FC</div><div><p class="eyebrow">THIS IS THE POINT</p><h2 id="community-title">FC MEANS<br /><em>FOR COMMUNITY.</em></h2><p>We believe sport is a shared language. A shirt, a match, a run, a conversation — every part of it brings people together.</p><a class="button primary" href="#wear">Be part of it <span>↗</span></a></div></section>
     <section id="wear" class="wear" aria-labelledby="wear-title"><div><p class="eyebrow">COMING SOON</p><h2 id="wear-title">WEAR<br /><span>THE CULTURE.</span></h2><p>Football-inspired today. Sports and lifestyle tomorrow. UltraWear is just getting started.</p></div><div class="wear-card"><div>ULTRA<br />WEAR</div><small>FC — FOR COMMUNITY</small></div></section>
   </main>
-  <footer><div class="brand"><span>ULTRAWEAR</span><b>FC</b></div><p>FC = FOR COMMUNITY.</p><div><a href="#top">Instagram</a><a href="#top">TikTok</a><a href="#top">Contact</a></div><small>© 2026 UltraWear FC. Built for the culture.</small></footer>
+  <footer><div class="brand"><span>ULTRAWEAR</span><b>FC</b></div><p>FC = FOR COMMUNITY.</p><div><a href="#top">Instagram</a><a href="#top">TikTok</a><a href="#top">Contact</a></div><small>© 2026 UltraWear FC. Built for the culture.</small></div></footer>
   <script src="app.js"></script>
   <script type="module">
-    import { loadVerifiedSoccerFeed } from './live-sports-ui/verified-feed.js';
+    import { loadVerifiedSoccerFeed, loadVerifiedSoccerSpotlight } from './live-sports-ui/verified-feed.js';
 
     const liveGrid = document.querySelector('#live-sports-grid');
     const feedStatus = document.querySelector('#feed-status-label');
+    const spotlight = document.querySelector('#live-spotlight-card');
+    const spotlightStatus = document.querySelector('#spotlight-status');
+    const spotlightMeta = document.querySelector('#spotlight-meta');
 
     async function refreshFeed() {
       const result = await loadVerifiedSoccerFeed(liveGrid);
@@ -52,8 +61,16 @@
         : 'DEMO FEED · WAITING FOR VERIFIED PROVIDER';
     }
 
+    async function refreshSpotlight() {
+      const result = await loadVerifiedSoccerSpotlight(spotlight);
+      if (spotlightStatus) spotlightStatus.textContent = result.verified ? 'LIVE MATCH' : 'MATCH PREVIEW';
+      if (spotlightMeta) spotlightMeta.textContent = result.verified ? 'Football · verified feed' : 'Football · preview data';
+    }
+
     refreshFeed();
+    refreshSpotlight();
     window.setInterval(refreshFeed, 10000);
+    window.setInterval(refreshSpotlight, 10000);
 
     const trendingCard = document.querySelector('#trending-card');
     fetch('/api/trending?limit=1', { headers: { accept: 'application/json' } })
