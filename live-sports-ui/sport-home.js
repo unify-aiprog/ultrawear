@@ -19,6 +19,8 @@ setText('#latest-headline', sport.headline);
 setText('#latest-copy', sport.story);
 setText('#story-one', sport.headline);
 
+let stopMomentObserver = () => {};
+
 async function loadLive() {
   const grid = document.querySelector('#sport-live-grid');
   const status = document.querySelector('#feed-status');
@@ -31,6 +33,7 @@ async function loadLive() {
     const data = await response.json();
     if (data?.verified && Array.isArray(data.events) && data.events.length) {
       const { renderMatchFeed } = await import('./render.js');
+      const { observeMomentFeed } = await import('./moment-engine.js');
       renderMatchFeed(grid, data.events.map((event) => ({
         ...event,
         home: event.home?.shortName || event.home?.name || event.home?.id || 'HOME',
@@ -41,12 +44,15 @@ async function loadLive() {
         note: 'Verified sports feed',
         meta: 'Open match centre',
       })));
+      stopMomentObserver();
+      stopMomentObserver = observeMomentFeed(grid);
       setText('#feed-status', `${data.events.length} LIVE EVENT${data.events.length === 1 ? '' : 'S'} ↗`);
       setText('#live-state', 'VERIFIED LIVE FEED.');
       setText('#live-description', `${sport.name} events currently live.`);
       return;
     }
   } catch {}
+  stopMomentObserver();
   grid.innerHTML = `<article class="live-card featured loading-card"><div class="card-top"><span class="live-dot">FEED READY</span><span>${sport.name} · Preview</span></div><div class="score"><strong>NO LIVE</strong><b>—</b><strong>YET</strong></div><div class="match-meta"><span>Verified live data will appear here.</span><span>UltraWear</span></div></article>`;
   setText('#feed-status', 'BUILDING THE FEED ↗');
   setText('#live-state', 'WAITING FOR VERIFIED ACTION.');
