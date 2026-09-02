@@ -49,9 +49,12 @@ export function createEventReconciler({ eventStore, observationStore, auditStore
       const confidence = Math.min(1, Math.max(0, Number(sourceConfidence({ sourceId, sourceType, event: incoming })) || 0));
 
       const observations = [];
+      const previousByField = new Map();
       for (const field of RECONCILED_FIELDS) {
         const value = incoming[field];
         if (value == null) continue;
+        const previous = await observationStore.listObservations(canonicalId, field);
+        previousByField.set(field, reconcileObservations(previous)[0] ?? null);
         const observation = createObservation({ entityId: canonicalId, entityType: 'event', field, value, sourceId, observedAt, confidence });
         await observationStore.putObservation(observation);
         observations.push(observation);
@@ -65,9 +68,18 @@ export function createEventReconciler({ eventStore, observationStore, auditStore
         const after = reconcileObservations(fieldObservations)[0];
         reconciledFields.push(after);
         if (auditStore) {
-          const beforeValue = existing?.[field];
-          const before = beforeValue == null ? null : { verification: fieldObservations.length > 1 ? 'corroborated' : 'unverified' };
-          const audit = createFactAuditRecord({ entityId: canonicalId, entityType: 'event', field, sourceId, observedAt, before, after, previousValue: beforeValue, reason: after.verification === 'conflicted' ? 'source disagreement' : 'canonical reconciliation' });
+          const before = previousByField.get(field) ?? null;
+          const audit = createFactAuditRecord({
+            entityId: canonicalId,
+            entityType: 'event',
+            field,
+            sourceId,
+            observedAt,
+            before,
+            after,
+            previousValue: before?.value,
+            reason: after.verification === 'conflicted' ? 'source disagreement' : 'canonical reconciliation',
+          });
           if (audit) { await auditStore.putAudit(audit); audits.push(audit); }
         }
       }
