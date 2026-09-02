@@ -1,3 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
 import { createLiveSportsWorker } from './worker.js';
 
 const adapter = {
@@ -28,6 +30,20 @@ function memoryKv() {
   return {
     async get(key) { return values.get(key) ?? null; },
     async put(key, value) { values.set(key, value); },
+    async list({ prefix }) {
+      return { keys: [...values.keys()].filter((key) => key.startsWith(prefix)).map((name) => ({ name })), list_complete: true };
+    },
+    async delete(key) { values.delete(key); },
+  };
+}
+
+function durableStore() {
+  const values = new Map();
+  return {
+    async put(key, value) { values.set(key, value); },
+    async list(prefix) { return [...values.entries()].filter(([key]) => key.startsWith(prefix)).map(([, value]) => value); },
+    async delete(key) { values.delete(key); },
+    values,
   };
 }
 
@@ -56,25 +72,67 @@ test('worker persists changed events, discovery index, team histories, and playe
   });
 
   const result = await worker.ingest('test-source', { observedAt: '2026-09-02T19:42:00Z' });
-  expect(result.ok).toBe(true);
-  expect(JSON.parse(await store.get('event-1')).score).toEqual({ home: 2, away: 1 });
-  expect(JSON.parse(await index.get('events'))[0].id).toBe('event-1');
+  assert.equal(result.ok, true);
+  assert.deepEqual(JSON.parse(await store.get('event-1')).score, { home: 2, away: 1 });
+  assert.equal(JSON.parse(await index.get('events'))[0].id, 'event-1');
 
   const homeMatches = JSON.parse(await teamHistory.get('team:home:matches'));
   const awayMatches = JSON.parse(await teamHistory.get('team:away:matches'));
-  expect(homeMatches).toHaveLength(1);
-  expect(awayMatches).toHaveLength(1);
-  expect(homeMatches[0]).toMatchObject({ eventId: 'event-1', teamId: 'home', opponent: { id: 'away', name: 'Away' } });
-  expect(awayMatches[0]).toMatchObject({ eventId: 'event-1', teamId: 'away', opponent: { id: 'home', name: 'Home' } });
+  assert.equal(homeMatches.length, 1);
+  assert.equal(awayMatches.length, 1);
+  assert.deepEqual(homeMatches[0], { eventId: 'event-1', teamId: 'home', opponent: { id: 'away', name: 'Away' } });
+  assert.deepEqual(awayMatches[0], { eventId: 'event-1', teamId: 'away', opponent: { id: 'home', name: 'Home' } });
 
   const playerEvents = JSON.parse(await playerHistory.get('player:player-1:events'));
-  expect(playerEvents).toHaveLength(1);
-  expect(playerEvents[0]).toMatchObject({
+  assert.equal(playerEvents.length, 1);
+  assert.deepEqual(playerEvents[0], {
     eventId: 'event-1',
     personId: 'player-1',
     teamId: 'home',
     opponentId: 'away',
+    role: 'forward',
+    started: true,
     minutes: 73,
     stats: { goals: 1, assists: 1 },
   });
+});
+
+test('worker exposes durable scheduling when a scheduler store is supplied', async () => {
+  const schedulerStore = durableStore();
+  const now = Date.parse('2026-09-02T12:00:00.000Z');
+  const worker = createLiveSportsWorker({
+    env: { EVENT_STORE: memoryKv(), OBSERVATION_STORE: memoryKv(), EVENT_INDEX: memoryKv(), TEAM_HISTORY: memoryKv(), PLAYER_HISTORY: memoryKv() },
+    adapter,
+    schedulerStore,
+    now: () => now,
+    fetchSource: async () => ({ id: 'event-scheduled', home: 1, away: 0 }),
+  });
+
+  assert.equal(typeof worker.schedule, 'function');
+  assert.equal(typeof worker.runScheduled, 'function');
+  assert.equal(typeof worker.listScheduled, 'function');
+
+  const scheduled = await worker.schedule('test-source', { eventStatus: 'scheduled' }, 0);
+  assert.equal(scheduled.sourceId, 'test-source');
+  assert.equal((await worker.listScheduled()).length, 1);
+
+  const results = await worker.runScheduled(now);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].sourceId, 'test-source');
+  assert.equal(results[0].ok, true);
+  assert.equal(results[0].result.event.id, 'event-scheduled');
+  assert.ok(Date.parse((await worker.listScheduled())[0].scheduledAt) > now);
+});
+
+test('worker remains directly ingestible without a durable scheduler', async () => {
+  const worker = createLiveSportsWorker({
+    env: { EVENT_STORE: memoryKv(), OBSERVATION_STORE: memoryKv(), EVENT_INDEX: memoryKv(), TEAM_HISTORY: memoryKv(), PLAYER_HISTORY: memoryKv() },
+    adapter,
+    fetchSource: async () => ({ id: 'event-direct', home: 0, away: 0 }),
+  });
+
+  const result = await worker.ingest('test-source', { observedAt: '2026-09-02T19:42:00Z' });
+  assert.equal(result.ok, true);
+  assert.equal(result.event.id, 'event-direct');
+  assert.equal(worker.runScheduled, undefined);
 });
