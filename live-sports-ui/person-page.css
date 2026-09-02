@@ -1,0 +1,38 @@
+.person-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 48px 20px 80px;
+}
+
+.person-hero {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  padding: 32px;
+  border-radius: 20px;
+  background: #111;
+  color: #fff;
+}
+
+.person-avatar {
+  width: 112px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 112px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #292929;
+  font-weight: 800;
+  font-size: 28px;
+}
+
+.person-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.person-page h1 { margin: 4px 0 8px; font-size: clamp(36px, 7vw, 64px); line-height: 1; }
+.person-page h2 { margin-bottom: 12px; }
+.eyebrow { margin: 0; text-transform: uppercase; letter-spacing: .12em; font-size: 12px; opacity: .7; }
+.person-section { padding: 28px 0; border-bottom: 1px solid #ddd; }
+.person-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.person-tags span { padding: 7px 10px; border: 1px solid #ccc; border-radius: 999px; }
+.person-error { padding: 48px 0; }
+@media (max-width: 600px) { .person-hero { align-items: flex-start; flex-direction: column; } }

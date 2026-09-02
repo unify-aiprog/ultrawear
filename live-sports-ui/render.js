@@ -22,7 +22,8 @@ function renderMoment(moment) {
   if (!normalized) return '';
   const verifiedClass = normalized.verified ? ' is-verified' : ' is-demo';
   const announce = isHighValueMoment(normalized) ? ' aria-live="polite"' : '';
-  return `<div class="match-moment ${momentClass(normalized)}${verifiedClass}"${announce}>
+  const momentId = normalized.id ? ` data-moment-id="${escapeHtml(normalized.id)}"` : '';
+  return `<div class="match-moment ${momentClass(normalized)}${verifiedClass}"${announce}${momentId}>
     <span class="moment-label">${escapeHtml(normalized.label)}</span>
     <span>${escapeHtml(normalized.verified ? 'Verified live event' : 'Preview event — not live')}</span>
   </div>`;
@@ -38,12 +39,13 @@ export function renderTeamMatchCard(match) {
   const moment = renderMoment(match.moment);
   const normalizedMoment = normalizeMoment(match.moment);
   const momentData = normalizedMoment ? ` data-moment="${escapeHtml(normalizedMoment.type)}"` : '';
+  const eventIdData = match.id ? ` data-event-id="${escapeHtml(match.id)}"` : '';
   const eventId = encodeURIComponent(match.id ?? '');
   const score = match.score ? `<div class="card-score"><b>${escapeHtml(match.score.home)}</b><span>—</span><b>${escapeHtml(match.score.away)}</b></div>` : '';
 
   return `
     <a class="live-card-link" href="/event/${eventId}" aria-label="Open ${escapeHtml(home.name)} versus ${escapeHtml(away.name)} event page">
-      <article class="live-card team-match-card motion-${intensity} ${normalizedMoment ? momentClass(normalizedMoment) : ''}" style="${teamStyle(match.home)};--away-primary:${away.primary};--away-secondary:${away.secondary}" data-match-card data-intensity="${intensity}"${momentData}>
+      <article class="live-card team-match-card motion-${intensity} ${normalizedMoment ? momentClass(normalizedMoment) : ''}" style="${teamStyle(match.home)};--away-primary:${away.primary};--away-secondary:${away.secondary}" data-match-card data-intensity="${intensity}"${eventIdData}${momentData}>
         <div class="card-top">
           <span class="live-dot ${match.isLive ? 'is-live' : 'is-up-next'}">${status}</span>
           <span>${escapeHtml(match.sport ?? 'Sport')} · ${competition}</span>

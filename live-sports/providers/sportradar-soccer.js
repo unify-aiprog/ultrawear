@@ -5,9 +5,8 @@
  * never fabricates missing values. Production credentials/network access belong
  * in a server-side source worker, not in the browser.
  */
-import { createSportEvent } from '../events.js';
+import { createSportEvent, createSportMoment } from '../events.js';
 import { createSourceAdapter } from '../adapter.js';
-import { normalizeMoment } from '../moments.js';
 
 const STATUS_MAP = Object.freeze({
   not_started: 'scheduled',
@@ -22,11 +21,24 @@ const STATUS_MAP = Object.freeze({
 
 const MOMENT_MAP = Object.freeze({
   goal: 'goal',
-  penalty: 'penalty',
+  own_goal: 'own_goal',
+  penalty_awarded: 'penalty_awarded',
+  penalty_goal: 'penalty_goal',
+  penalty_miss: 'penalty_miss',
   red_card: 'red_card',
+  yellow_card: 'yellow_card',
+  second_yellow: 'second_yellow',
+  substitution: 'substitution',
   var: 'var',
   no_goal: 'var',
   no_penalty: 'var',
+  injury: 'injury',
+  kickoff: 'kickoff',
+  halftime: 'halftime',
+  full_time: 'fulltime',
+  fulltime: 'fulltime',
+  extra_time: 'extra_time',
+  shootout: 'shootout',
 });
 
 function required(value, label) {
@@ -47,18 +59,34 @@ function normalizeStatus(payload) {
   return STATUS_MAP[raw] ?? null;
 }
 
-function normalizeMomentFromTimeline(payload) {
-  const timeline = payload?.timeline ?? [];
-  const latest = [...timeline].reverse().find((item) => MOMENT_MAP[item.description] || MOMENT_MAP[item.type]);
-  if (!latest) return null;
-  const type = MOMENT_MAP[latest.description] ?? MOMENT_MAP[latest.type];
-  return normalizeMoment({
+function timelineMoment(item, index) {
+  const rawType = String(item?.description ?? item?.type ?? '').trim().toLowerCase();
+  const type = MOMENT_MAP[rawType];
+  if (!type) return null;
+
+  const occurredAt = item?.timestamp ?? item?.occurred_at ?? item?.occurredAt;
+  const matchClock = item?.match_clock ?? item?.clock;
+  if (!occurredAt && !matchClock) return null;
+
+  return createSportMoment({
+    id: item?.id ?? `sportradar-moment:${type}:${occurredAt ?? matchClock}:${index}`,
     type,
-    sport: 'Football',
-    team: latest.competitor ?? null,
-    timestamp: latest.match_clock ?? null,
+    occurredAt: occurredAt ?? matchClock,
+    minute: item?.minute ?? item?.match_time ?? matchClock ?? null,
+    title: item?.description ?? rawType,
+    description: item?.comment ?? item?.text ?? null,
+    actor: item?.player?.id ?? item?.player?.name ?? item?.competitor_player_id ?? null,
+    team: item?.competitor ?? item?.team?.id ?? item?.team?.name ?? null,
+    related: item?.related_to ? [item.related_to] : [],
+    animation: { key: type.replace(/_/g, '-'), replayable: true },
     verified: true,
+    source: { provider: 'Sportradar', sourceId: 'sportradar-soccer' },
   });
+}
+
+function normalizeMoments(payload) {
+  const timeline = Array.isArray(payload?.timeline) ? payload.timeline : [];
+  return timeline.map(timelineMoment).filter(Boolean);
 }
 
 export function normalizeSportRadarSoccer(payload, context = {}) {
@@ -70,6 +98,7 @@ export function normalizeSportRadarSoccer(payload, context = {}) {
     home: payload.sport_event_status.home_score ?? null,
     away: payload.sport_event_status.away_score ?? null,
   } : null;
+  const moments = normalizeMoments(payload);
 
   return createSportEvent({
     id: required(event.id, 'sport_event.id'),
@@ -82,7 +111,8 @@ export function normalizeSportRadarSoccer(payload, context = {}) {
     score,
     venue: event.venue ? { id: event.venue.id ?? null, name: event.venue.name ?? null, city: event.venue.city_name ?? null } : null,
     source: { id: 'sportradar-soccer', provider: 'Sportradar', observedAt: context.observedAt ?? new Date().toISOString() },
-    moment: normalizeMomentFromTimeline(payload),
+    moment: moments.at(-1) ?? null,
+    moments,
     updatedAt: payload?.sport_event_status?.updated_at ?? context.observedAt ?? null,
   });
 }
