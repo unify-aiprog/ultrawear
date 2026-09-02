@@ -46,7 +46,7 @@ document.addEventListener('click', (event) => {
     if (Date.now() - last < interestCooldown) return;
     localStorage.setItem(interestKey(entityId), String(Date.now()));
   } catch {}
-  fetch('/api/trending', { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ entityId, entityType, label }), keepalive: true }).catch(() => {});
+  fetch('/api/trending', { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ entityId, entityType, label, signal: 'view' }), keepalive: true }).catch(() => {});
 });
 
 // Player/athlete/manager identity uses one reusable modal instead of generating a page per person.
