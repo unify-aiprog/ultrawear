@@ -32,5 +32,22 @@ menuButton?.addEventListener('click', () => setMenu(!mobileNav?.classList.contai
 mobileNav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => setMenu(false)));
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setMenu(false); });
 
-// Player/athlete/manager identity uses one reusable modal, so the graph can scale without a page per person.
+const interestCooldown = 10 * 60 * 1000;
+const interestKey = (id) => `uw-interest:${id}`;
+document.addEventListener('click', (event) => {
+  const target = event.target.closest?.('[data-interest-id]');
+  if (!target) return;
+  const entityId = decodeURIComponent(target.dataset.interestId || '');
+  const entityType = decodeURIComponent(target.dataset.interestType || 'entity');
+  const label = decodeURIComponent(target.dataset.interestLabel || entityId);
+  if (!entityId) return;
+  try {
+    const last = Number(localStorage.getItem(interestKey(entityId)) || 0);
+    if (Date.now() - last < interestCooldown) return;
+    localStorage.setItem(interestKey(entityId), String(Date.now()));
+  } catch {}
+  fetch('/api/trending', { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ entityId, entityType, label }), keepalive: true }).catch(() => {});
+});
+
+// Player/athlete/manager identity uses one reusable modal instead of generating a page per person.
 import('./live-sports-ui/person-modal.js').then(({ bindPersonModals }) => bindPersonModals()).catch(() => {});
