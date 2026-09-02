@@ -1,0 +1,1 @@
+export const SPORT_VISUALS = Object.freeze({});
