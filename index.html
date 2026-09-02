@@ -8,6 +8,7 @@
   <title>UltraWear FC — For Community</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="live-sports-ui/moments.css" />
+  <link rel="stylesheet" href="live-sports-ui/home-pulse.css" />
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -30,7 +31,7 @@
           <div><h3 style="font-size:clamp(28px,4vw,54px);margin:18px 0 8px">Building the signal.</h3><p>As people search, open and watch sports entities, UltraWear will surface the subjects gaining attention.</p></div>
           <div class="match-meta"><span>Aggregated · no personal profiles</span><span>Updating automatically</span></div>
         </article>
-        <div class="pulse-match" aria-live="polite">
+        <div class="pulse-match" aria-label="Live match spotlight">
           <div class="card-top"><span class="live-dot is-live" id="spotlight-status">LIVE MATCH</span><span id="spotlight-meta">Football · verified feed</span></div>
           <div id="live-spotlight-card"><article class="live-card featured loading-card"><div class="score"><strong>LOADING</strong><b>—</b><strong>LIVE</strong></div><div class="match-meta"><span>Checking verified feed</span><span>UltraWear</span></div></article></div>
         </div>
@@ -43,7 +44,7 @@
     <section id="community" class="community" aria-labelledby="community-title"><div class="community-mark" aria-hidden="true">FC</div><div><p class="eyebrow">THIS IS THE POINT</p><h2 id="community-title">FC MEANS<br /><em>FOR COMMUNITY.</em></h2><p>We believe sport is a shared language. A shirt, a match, a run, a conversation — every part of it brings people together.</p><a class="button primary" href="#wear">Be part of it <span>↗</span></a></div></section>
     <section id="wear" class="wear" aria-labelledby="wear-title"><div><p class="eyebrow">COMING SOON</p><h2 id="wear-title">WEAR<br /><span>THE CULTURE.</span></h2><p>Football-inspired today. Sports and lifestyle tomorrow. UltraWear is just getting started.</p></div><div class="wear-card"><div>ULTRA<br />WEAR</div><small>FC — FOR COMMUNITY</small></div></section>
   </main>
-  <footer><div class="brand"><span>ULTRAWEAR</span><b>FC</b></div><p>FC = FOR COMMUNITY.</p><div><a href="#top">Instagram</a><a href="#top">TikTok</a><a href="#top">Contact</a></div><small>© 2026 UltraWear FC. Built for the culture.</small></div></footer>
+  <footer><div class="brand"><span>ULTRAWEAR</span><b>FC</b></div><p>FC = FOR COMMUNITY.</p><div><a href="#top">Instagram</a><a href="#top">TikTok</a><a href="#top">Contact</a></div><small>© 2026 UltraWear FC. Built for the culture.</small></footer>
   <script src="app.js"></script>
   <script type="module">
     import { loadVerifiedSoccerFeed, loadVerifiedSoccerSpotlight } from './live-sports-ui/verified-feed.js';
