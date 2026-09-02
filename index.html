@@ -47,7 +47,7 @@
   <footer><div class="brand"><span>ULTRAWEAR</span><b>FC</b></div><p>FC = FOR COMMUNITY.</p><div><a href="#top">Instagram</a><a href="#top">TikTok</a><a href="#top">Contact</a></div><small>© 2026 UltraWear FC. Built for the culture.</small></footer>
   <script src="app.js"></script>
   <script type="module">
-    import { loadVerifiedSoccerFeed, loadVerifiedSoccerSpotlight } from './live-sports-ui/verified-feed.js';
+    import { loadVerifiedLiveFeed, loadVerifiedLiveSpotlight } from './live-sports-ui/verified-feed.js';
 
     const liveGrid = document.querySelector('#live-sports-grid');
     const feedStatus = document.querySelector('#feed-status-label');
@@ -56,14 +56,14 @@
     const spotlightMeta = document.querySelector('#spotlight-meta');
 
     async function refreshFeed() {
-      const result = await loadVerifiedSoccerFeed(liveGrid);
+      const result = await loadVerifiedLiveFeed(liveGrid);
       if (feedStatus) feedStatus.textContent = result.verified
         ? `VERIFIED LIVE FEED · ${result.count} EVENT${result.count === 1 ? '' : 'S'}`
         : 'DEMO FEED · WAITING FOR VERIFIED PROVIDER';
     }
 
     async function refreshSpotlight() {
-      const result = await loadVerifiedSoccerSpotlight(spotlight);
+      const result = await loadVerifiedLiveSpotlight(spotlight);
       if (spotlightStatus) spotlightStatus.textContent = result.verified ? 'LIVE MATCH' : 'MATCH PREVIEW';
       if (spotlightMeta) spotlightMeta.textContent = result.verified ? `${result.sport || 'Sports'} · verified feed` : `${result.sport || 'Sports'} · preview data`;
     }
