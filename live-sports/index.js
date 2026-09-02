@@ -7,3 +7,5 @@ export * from './freshness.js';
 export * from './event-page.js';
 export * from './registry.js';
 export * from './retention.js';
+export * from './source-monitor.js';
+export * from './providers/sportradar-soccer.js';
