@@ -7,7 +7,7 @@
  */
 import { createSportEvent } from '../events.js';
 import { createSourceAdapter } from '../adapter.js';
-import { normalizeMoment } from '../../live-sports-ui/moments.js';
+import { normalizeMoment } from '../moments.js';
 
 const STATUS_MAP = Object.freeze({
   not_started: 'scheduled',
