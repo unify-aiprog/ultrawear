@@ -9,14 +9,28 @@ jobs:
   sync-live:
     runs-on: ubuntu-latest
     steps:
+      - name: Check live sync configuration
+        id: config
+        env:
+          ULTRAWEAR_URL: ${{ secrets.ULTRAWEAR_URL }}
+          FOOTBALL_DATA_INGEST_SECRET: ${{ secrets.FOOTBALL_DATA_INGEST_SECRET }}
+        run: |
+          if [[ -n "$ULTRAWEAR_URL" && -n "$FOOTBALL_DATA_INGEST_SECRET" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "Live football ingestion is configured."
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Live football ingestion is not configured; skipping scheduled sync."
+            echo "Configure ULTRAWEAR_URL and FOOTBALL_DATA_INGEST_SECRET in repository Actions secrets to enable it."
+          fi
+
       - name: Trigger live ingestion
+        if: steps.config.outputs.configured == 'true'
         env:
           ULTRAWEAR_URL: ${{ secrets.ULTRAWEAR_URL }}
           FOOTBALL_DATA_INGEST_SECRET: ${{ secrets.FOOTBALL_DATA_INGEST_SECRET }}
         run: |
           set -euo pipefail
-          test -n "$ULTRAWEAR_URL"
-          test -n "$FOOTBALL_DATA_INGEST_SECRET"
           curl --fail-with-body --silent --show-error \
             -X POST "$ULTRAWEAR_URL/api/ingest/football/live" \
             -H "x-ingest-secret: $FOOTBALL_DATA_INGEST_SECRET"
