@@ -7,13 +7,21 @@ export const dynamic = 'force-dynamic';
 const MODERATOR_ROLES = new Set(['admin', 'moderator', 'editor']);
 const MODERATION_STATUSES = new Set<ModerationStatus>(['pending', 'approved', 'rejected', 'removed', 'appeal']);
 
-export async function POST(request: Request) {
+async function authenticatedModerator(request: Request) {
+  const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '').trim();
   const supabase = getSupabaseServerClient();
-  if (!supabase) return NextResponse.json({ error: 'Authentication service unavailable' }, { status: 503 });
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  if (!token || !supabase) return null;
+  const { data } = await supabase.auth.getUser(token);
+  const user = data.user;
+  if (!user) return null;
   const role = typeof user.app_metadata?.role === 'string' ? user.app_metadata.role : '';
-  if (!MODERATOR_ROLES.has(role)) return NextResponse.json({ error: 'Moderator access required' }, { status: 403 });
+  if (!MODERATOR_ROLES.has(role)) return null;
+  return user;
+}
+
+export async function POST(request: Request) {
+  const user = await authenticatedModerator(request);
+  if (!user) return NextResponse.json({ error: 'Moderator authentication required' }, { status: 401 });
 
   try {
     const body = await request.json();
