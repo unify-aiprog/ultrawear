@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import { AdSlot } from '@/components/ad-slot';
+import { WeekendAction, getWeekendActionEvents } from '@/components/weekend-action';
 
-export default function HomePage() {
+export const revalidate = 120;
+
+export default async function HomePage() {
+  const weekendEvents = await getWeekendActionEvents();
   return <>
     <section className="hero">
       <div className="hero-copy">
@@ -15,9 +19,11 @@ export default function HomePage() {
 
     <div className="ticker" aria-label="UltraWear message">{['FOOTBALL','COMMUNITY','CULTURE','SPORTS','FORWARD'].map(item => <span key={item}>{item}</span>)}</div>
 
+    <WeekendAction events={weekendEvents} />
+
     <section className="section" aria-labelledby="sports-heading">
       <div className="section-head"><div><p className="eyebrow">YOUR WORLD OF SPORT</p><h2 id="sports-heading">CHOOSE<br /><span>YOUR GAME.</span></h2></div><Link className="text-link" href="/sports">All sports ↗</Link></div>
-      <div className="sport-grid">{[['01','Football','/football'],['02','Basketball','/basketball'],['03','Tennis','/tennis'],['04','Running','/running']].map(([n,name,href]) => <Link className="sport-card" href={href} key={name}><span>{n}</span><b>{name}</b><i>↗</i></Link>)}</div>
+      <div className="sport-grid">{[['01','Football','/sports/football'],['02','Basketball','/sports/basketball'],['03','Tennis','/sports/tennis'],['04','Running','/sports/running']].map(([n,name,href]) => <Link className="sport-card" href={href} key={name}><span>{n}</span><b>{name}</b><i>↗</i></Link>)}</div>
     </section>
 
     <AdSlot minHeight={250} />
