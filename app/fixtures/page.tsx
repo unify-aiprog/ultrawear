@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getSupabaseServerClient } from '@/lib/supabase';
+import { WeekendAction, getWeekendActionEvents } from '@/components/weekend-action';
 
 export const revalidate = 120;
 
@@ -10,6 +11,6 @@ async function getFixtures() {
 }
 
 export default async function FixturesPage() {
-  const fixtures = await getFixtures();
-  return <div className="page-wrap"><section className="page-hero"><p className="eyebrow">MATCHDAY INDEX</p><h1>Fixtures<br /><em>& results.</em></h1><p>One global match list, powered by the same event graph used by team and competition pages.</p></section><section className="section-block"><div className="data-list">{fixtures.map((event) => <Link className="data-row" href={`/matches/${event.id}`} key={event.id}><span>{event.starts_at ? new Date(event.starts_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : 'TBD'}</span><b>{event.home_team?.name ?? 'Home'} <strong>{event.home_score ?? '—'}–{event.away_score ?? '—'}</strong> {event.away_team?.name ?? 'Away'}</b><small>{event.competitions_v2?.name ?? 'Football'} · {event.status ?? 'Scheduled'}</small></Link>)}{!fixtures.length && <div className="empty-state"><strong>No fixtures are available yet.</strong><span>Run the football catalogue sync to populate upcoming matches and results.</span></div>}</div></section></div>;
+  const [fixtures, weekendEvents] = await Promise.all([getFixtures(), getWeekendActionEvents()]);
+  return <div className="page-wrap"><section className="page-hero"><p className="eyebrow">MATCHDAY INDEX · SEPTEMBER 5–6</p><h1>Fixtures<br /><em>& results.</em></h1><p>One global match list, powered by the same event graph used by team and competition pages. Start with the weekend, then explore the full schedule.</p></section><WeekendAction events={weekendEvents} title="WEEKEND AGENDA." /><section className="section-block"><div className="data-list">{fixtures.map((event) => <Link className="data-row" href={`/matches/${event.id}`} key={event.id}><span>{event.starts_at ? new Date(event.starts_at).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : 'TBD'}</span><b>{event.home_team?.name ?? 'Home'} <strong>{event.home_score ?? '—'}–{event.away_score ?? '—'}</strong> {event.away_team?.name ?? 'Away'}</b><small>{event.competitions_v2?.name ?? 'Sport'} · {event.status ?? 'Scheduled'}</small></Link>)}{!fixtures.length && <div className="empty-state"><strong>No fixtures are available yet.</strong><span>Run the catalogue sync to populate upcoming matches and results.</span></div>}</div></section></div>;
 }
