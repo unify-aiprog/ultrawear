@@ -45,6 +45,14 @@ function animateNewMoments(container, previousKeys) {
   return currentKeys;
 }
 
+function isLocalPreview() {
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+}
+
+function renderFeedStatus(container, message) {
+  container.innerHTML = `<div class="live-feed-status" role="status"><span>${message}</span></div>`;
+}
+
 async function getEvents() {
   const url = `/api/sports/live?refresh=${Date.now()}`;
   const response = await fetch(url, {
@@ -77,10 +85,18 @@ export function createLiveFeedController(container) {
           knownMomentKeys = animateNewMoments(container, knownMomentKeys);
           return { verified: true, count: events.length };
         }
+        if (isLocalPreview()) {
+          renderMatchFeed(container, DEMO_MATCHES);
+        } else {
+          renderFeedStatus(container, 'No verified live events right now.');
+        }
       } catch {
-        // Keep the preview visible while verified feed configuration is unavailable.
+        if (isLocalPreview()) {
+          renderMatchFeed(container, DEMO_MATCHES);
+        } else {
+          renderFeedStatus(container, 'Live sports feed temporarily unavailable.');
+        }
       }
-      renderMatchFeed(container, DEMO_MATCHES);
       knownMomentKeys = new Set();
       return { verified: false, count: 0 };
     },
@@ -100,12 +116,20 @@ export function createLiveSpotlightController(container) {
           knownMomentKeys = animateNewMoments(container, knownMomentKeys);
           return { verified: true, count: 1, sport: events[0].sport };
         }
+        if (isLocalPreview()) {
+          renderMatchFeed(container, DEMO_MATCHES.slice(0, 1));
+        } else {
+          renderFeedStatus(container, 'No verified live event right now.');
+        }
       } catch {
-        // Preserve the preview card while verified provider configuration is pending.
+        if (isLocalPreview()) {
+          renderMatchFeed(container, DEMO_MATCHES.slice(0, 1));
+        } else {
+          renderFeedStatus(container, 'Live spotlight temporarily unavailable.');
+        }
       }
-      renderMatchFeed(container, DEMO_MATCHES.slice(0, 1));
       knownMomentKeys = new Set();
-      return { verified: false, count: 0, sport: DEMO_MATCHES[0]?.sport };
+      return { verified: false, count: 0, sport: isLocalPreview() ? DEMO_MATCHES[0]?.sport : undefined };
     },
   });
 }
