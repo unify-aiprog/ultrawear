@@ -49,6 +49,56 @@ create table if not exists community_moderation_audit (
 );
 create index if not exists community_moderation_audit_submission_idx on community_moderation_audit(submission_id, created_at desc);
 
+create or replace function moderate_community_submission(
+  p_submission_id text,
+  p_to_status text,
+  p_moderator_id text,
+  p_reason text default ''
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_row community_submissions%rowtype;
+  updated_row community_submissions%rowtype;
+  allowed boolean := false;
+begin
+  if nullif(trim(p_submission_id), '') is null or nullif(trim(p_moderator_id), '') is null then
+    raise exception 'submission id and moderator id are required';
+  end if;
+
+  select * into current_row
+  from community_submissions
+  where id = p_submission_id
+  for update;
+
+  if not found then raise exception 'submission not found'; end if;
+
+  allowed := (current_row.status = 'pending' and p_to_status in ('approved','rejected'))
+    or (current_row.status = 'approved' and p_to_status = 'removed')
+    or (current_row.status in ('rejected','removed') and p_to_status = 'appeal')
+    or (current_row.status = 'appeal' and p_to_status in ('approved','rejected'));
+
+  if not allowed then
+    raise exception 'invalid moderation transition: % -> %', current_row.status, p_to_status;
+  end if;
+
+  update community_submissions
+  set status = p_to_status,
+      moderated_at = now(),
+      moderator_id = p_moderator_id,
+      reason = coalesce(p_reason, '')
+  where id = p_submission_id
+  returning * into updated_row;
+
+  insert into community_moderation_audit(submission_id, from_status, to_status, moderator_id, reason)
+  values (p_submission_id, current_row.status, updated_row.status, p_moderator_id, coalesce(p_reason, ''));
+
+  return to_jsonb(updated_row);
+end;
+$$;
+
 do $$ declare table_name text; begin
   foreach table_name in array array['sports_source_observations','sports_reconciliation_runs','sports_entity_links','content_stories','content_audit_log','content_claims','trend_signals','editorial_opportunities','community_submissions','community_moderation_audit'] loop
     execute format('alter table %I enable row level security', table_name);
