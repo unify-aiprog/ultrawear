@@ -16,9 +16,15 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
       - name: Constitution gate
         run: npm run constitution:check
       - name: Type check
         run: npm run check
+      - name: Biome quality gate
+        run: npm run lint
       - name: Production build
         run: npm run build
+      - name: Browser regression and accessibility gates
+        run: npm run test:e2e
