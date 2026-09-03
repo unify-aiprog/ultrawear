@@ -1,13 +1,1 @@
-name: UltraWear Sports Revalidation
-
-# Legacy catalogue sync workflow removed. All provider data must enter through
-# the protected canonical sports revalidation boundary.
-
-on:
-  workflow_dispatch:
-
-jobs:
-  retired:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Legacy catalogue sync retired; use sports-revalidation.yml"
+# Retired. Provider data is revalidated only through sports-revalidation.yml.
