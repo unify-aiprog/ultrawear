@@ -19,7 +19,7 @@ Optional cache/provider integrations must remain optional and must not be requir
 
 Apply both SQL files to the target Supabase project, in this order:
 
-1. `supabase/catalogue-schema-v2.sql`
+1. `supabase/catalogue-schema-v2.sql` — canonical sports graph schema; the word catalogue here refers to the internal data model, not a storefront or public catalogue page.
 2. `supabase/constitutional-platform.sql`
 
 Then verify that the following tables exist and are queryable by the server role:
@@ -39,17 +39,19 @@ Then verify that the following tables exist and are queryable by the server role
 - `content_claims`
 - `trend_signals`
 - `editorial_opportunities`
+- `community_submissions`
+- `community_moderation_audit`
 
 Confirm the editorial and community security-definer RPCs are executable by `service_role` and not by `anon` or `authenticated`.
 
 ## Exercise the production service
 
-1. `GET /api/health` must return HTTP 200 and `status: healthy` after the first successful sync cycle.
-2. The sports revalidation endpoint must return HTTP 401 without its bearer secret.
-3. The same endpoint must succeed with `Authorization: Bearer <SPORTS_REVALIDATION_CRON_SECRET>`.
-4. Confirm at least one event observation and reconciliation run were persisted.
-5. Confirm catalogue competitions, seasons, teams and standings are populated from the canonical tables.
-6. Confirm the public `/sports`, `/catalogue`, `/fixtures`, `/live` and `/news` routes render without requiring the provider directly from the browser.
+1. The sports revalidation endpoint must return HTTP 401 without its bearer secret.
+2. The same endpoint must succeed with `Authorization: Bearer <SPORTS_REVALIDATION_CRON_SECRET>`.
+3. Confirm at least one event observation and reconciliation run were persisted.
+4. Confirm competitions, seasons, teams and standings are populated from the canonical sports tables.
+5. Confirm the public `/sports`, `/teams`, `/fixtures`, `/live` and `/news` routes render without requiring the provider directly from the browser.
+6. After the first successful sync cycle, `GET /api/health` must return HTTP 200 with `status: healthy`.
 
 ## Provider expansion rule
 
