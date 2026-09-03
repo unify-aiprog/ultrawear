@@ -6,15 +6,23 @@ export const dynamic = 'force-dynamic';
 
 const SPORTS = ['football', 'basketball', 'tennis', 'running'] as const;
 const CANONICAL_STATUSES = new Set([
-  'SCHEDULED',
-  'TIMED',
-  'IN_PLAY',
-  'PAUSED',
-  'FINISHED',
-  'POSTPONED',
-  'SUSPENDED',
-  'CANCELLED',
+  'SCHEDULED', 'TIMED', 'IN_PLAY', 'PAUSED', 'FINISHED', 'POSTPONED', 'SUSPENDED', 'CANCELLED',
 ]);
+
+type Relation<T> = T | T[] | null;
+type EventRow = {
+  id: string;
+  starts_at: string | null;
+  status: string | null;
+  provider_id: string | null;
+  competitions_v2: Relation<{ sport_id: string | null }>;
+  home_team: Relation<{ id: string }>;
+  away_team: Relation<{ id: string }>;
+};
+
+function first<T>(value: Relation<T>): T | null {
+  return Array.isArray(value) ? value[0] ?? null : value;
+}
 
 function weekendBounds(now = new Date()) {
   const day = now.getUTCDay();
@@ -57,15 +65,15 @@ export async function GET() {
     }, { status: 503 });
   }
 
-  const rows = eventsResult.data ?? [];
-  const foundSports = new Set(rows.map((row) => row.competitions_v2?.sport_id).filter((id): id is string => typeof id === 'string'));
+  const rows = (eventsResult.data ?? []) as unknown as EventRow[];
+  const foundSports = new Set(rows.map((row) => first(row.competitions_v2)?.sport_id).filter((id): id is string => typeof id === 'string'));
   const missingSports = SPORTS.filter((sport) => !foundSports.has(sport));
   const perSport = Object.fromEntries(SPORTS.map((sport) => {
-    const sportRows = rows.filter((row) => row.competitions_v2?.sport_id === sport);
+    const sportRows = rows.filter((row) => first(row.competitions_v2)?.sport_id === sport);
     return [sport, {
       events: sportRows.length,
       canonicalStatusViolations: sportRows.filter((row) => !CANONICAL_STATUSES.has(String(row.status ?? ''))).length,
-      identityViolations: sportRows.filter((row) => !row.provider_id || !row.home_team?.id || !row.away_team?.id || !row.competitions_v2?.sport_id).length,
+      identityViolations: sportRows.filter((row) => !row.provider_id || !first(row.home_team)?.id || !first(row.away_team)?.id || !first(row.competitions_v2)?.sport_id).length,
     }];
   }));
 
