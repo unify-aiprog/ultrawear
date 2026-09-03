@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createObservation, reconcile } from './contracts';
+import { createObservation, reconcile } from './contracts.ts';
 
 describe('sports contracts', () => {
   it('normalizes confidence and preserves provenance', () => {
