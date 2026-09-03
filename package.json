@@ -9,6 +9,7 @@
     "check": "tsc --noEmit",
     "test": "node --test content-core/*.test.js",
     "test:sports": "node --test --experimental-strip-types lib/sports/*.test.ts",
+    "test:platform": "node --test --experimental-strip-types lib/platform-contracts.test.ts",
     "constitution:check": "node scripts/constitution-check.mjs"
   },
   "dependencies": {
