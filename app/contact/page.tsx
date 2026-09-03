@@ -1,0 +1,2 @@
+export const metadata = { title: 'Contact' };
+export default function ContactPage() { return <section className="section prose-page"><p className="eyebrow">GET IN TOUCH</p><h1>CONTACT<br /><em>ULTRAWEAR.</em></h1><p>For partnerships, editorial enquiries, brand collaborations and general questions, reach out through the official UltraWear contact channel.</p><a className="button primary" href="mailto:hello@ultrawear.fc">Email UltraWear ↗</a></section>; }
