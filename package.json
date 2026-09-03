@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "check": "tsc --noEmit",
+    "test": "node --test content-core/*.test.js",
+    "test:sports": "node --test --experimental-strip-types lib/sports/*.test.ts",
     "constitution:check": "node scripts/constitution-check.mjs"
   },
   "dependencies": {
