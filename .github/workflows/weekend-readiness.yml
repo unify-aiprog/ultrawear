@@ -1,0 +1,59 @@
+name: UltraWear Weekend All-Action Readiness
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 16 * * 5'
+
+concurrency:
+  group: weekend-readiness
+  cancel-in-progress: true
+
+jobs:
+  readiness:
+    name: Full weekend readiness gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Constitution gate
+        run: npm run constitution:check
+
+      - name: Type check
+        run: npm run check
+
+      - name: Code quality
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+
+      - name: Browser, responsive and accessibility gates
+        run: npm run test:e2e
+
+      - name: Optional production smoke test
+        if: ${{ secrets.ULTRAWEAR_SMOKE_URL != '' }}
+        env:
+          ULTRAWEAR_SMOKE_URL: ${{ secrets.ULTRAWEAR_SMOKE_URL }}
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --retry 3 --retry-delay 2 "$ULTRAWEAR_SMOKE_URL/api/health"
+          curl --fail-with-body --silent --show-error --retry 3 --retry-delay 2 "$ULTRAWEAR_SMOKE_URL/api/health/sports-action"
+
+      - name: Report configuration gaps without failing readiness
+        if: ${{ secrets.ULTRAWEAR_SMOKE_URL == '' }}
+        run: |
+          echo "Production smoke URL is not configured. Application-level readiness gates still ran."
+          echo "Configure ULTRAWEAR_SMOKE_URL to enable production health checks."
