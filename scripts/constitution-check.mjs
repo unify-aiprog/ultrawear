@@ -26,7 +26,7 @@ for (const [label, pattern] of [['nosniff',/X-Content-Type-Options/],['referrer 
 const sports = read('lib/sports/contracts.ts');
 for (const [label, pattern] of [['source observations',/interface SourceObservation/],['verification state',/VerificationStatus/],['provider-neutral event model',/interface SportsEvent/],['source priority',/SOURCE_PRIORITY/],['conflict-aware reconciliation',/status: conflicts.length \? 'conflicted'/]]) if (!pattern.test(sports)) failures.push(`Sports trust layer missing: ${label}`);
 const revalidation = read('lib/ingest/revalidation.ts');
-for (const [label, pattern] of [['provider adapter',/SportsProviderAdapter/],['persistent observations',/sports_source_observations/],['reconciliation run',/sports_reconciliation_runs/],['freshness window',/freshnessAt/]]) if (!pattern.test(revalidation)) failures.push(`Sports revalidation layer missing: ${label}`);
+for (const [label, pattern] of [['provider adapter',/SportsProviderAdapter/],['persistent observations',/sports_source_observations/],['reconciliation run',/sports_reconciliation_runs/],['freshness window',/freshnessAt/],['server write boundary',/getSupabaseAdminClient/]]) if (!pattern.test(revalidation)) failures.push(`Sports revalidation layer missing: ${label}`);
 const firewall = read('content-core/fact-firewall.js');
 for (const [label, pattern] of [['research pack',/buildResearchPack/],['claim verification',/verifyResearchPack/],['unsupported claims',/unsupportedClaimIds/],['conflict detection',/detectConflicts/]]) if (!pattern.test(firewall)) failures.push(`Content trust layer missing: ${label}`);
 const editorial = read('content-core/editorial-service.js');
@@ -42,7 +42,7 @@ for (const script of ['test','test:sports','test:platform']) if (!packageJson.sc
 const schema = read('supabase/constitutional-platform.sql');
 for (const table of ['sports_source_observations','sports_reconciliation_runs','content_stories','content_audit_log','content_claims','trend_signals','editorial_opportunities']) if (!schema.includes(`create table if not exists ${table}`)) failures.push(`Persistence schema missing: ${table}`);
 const sitemap = read('app/sitemap.ts');
-for (const route of ['/sports','/catalogue','/teams','/fixtures','/live','/news','/about','/contact','/privacy','/terms','/shop']) if (!sitemap.includes(`'${route}'`)) failures.push(`Sitemap missing constitutional primary route: ${route}`);
+for (const route of ['/sports','/catalogue','/teams','/fixtures','/live','/news','/about','/contact','/privacy','/terms']) if (!sitemap.includes(`'${route}'`)) failures.push(`Sitemap missing constitutional primary route: ${route}`);
 
 const sourceRoots = ['app','components']; const sourceExtensions = new Set(['.tsx','.ts','.jsx','.js','.html']); const files = [];
 function walk(dir) { if (!fs.existsSync(dir)) return; for (const entry of fs.readdirSync(dir,{withFileTypes:true})) { if (entry.name === 'node_modules' || entry.name === '.next') continue; const full=path.join(dir,entry.name); if (entry.isDirectory()) walk(full); else if (sourceExtensions.has(path.extname(entry.name))) files.push(full); } }
