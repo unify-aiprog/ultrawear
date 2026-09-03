@@ -23,7 +23,7 @@ export default async function HomePage() {
 
     <section className="section" aria-labelledby="sports-heading">
       <div className="section-head"><div><p className="eyebrow">YOUR WORLD OF SPORT</p><h2 id="sports-heading">CHOOSE<br /><span>YOUR GAME.</span></h2></div><Link className="text-link" href="/sports">All sports ↗</Link></div>
-      <div className="sport-grid">{[['01','Football','/sports/football'],['02','Basketball','/sports/basketball'],['03','Tennis','/sports/tennis'],['04','Running','/sports/running']].map(([n,name,href]) => <Link className="sport-card" href={href} key={name}><span>{n}</span><b>{name}</b><i>↗</i></Link>)}</div>
+      <div className="sport-grid">{[['01','Football'],['02','Basketball'],['03','Tennis'],['04','Running']].map(([n,name]) => <Link className="sport-card" href="/sports" key={name}><span>{n}</span><b>{name}</b><i>↗</i></Link>)}</div>
     </section>
 
     <AdSlot minHeight={250} />

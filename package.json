@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "constitution:check": "node scripts/constitution-check.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.0",

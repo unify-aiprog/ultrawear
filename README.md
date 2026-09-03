@@ -4,6 +4,12 @@
 
 UltraWear FC is being built as a sports and lifestyle brand rooted in football culture, with a long-term vision that extends beyond football.
 
+## Web Constitution
+
+The web experience is governed by the [UltraWear FC Web Constitution](docs/WEB_CONSTITUTION.md). It defines the standards for experience, design, content, sports data, trust, community, technology, accessibility, privacy, commerce, governance, and long-term evolution.
+
+Before shipping significant work, use the constitution's **Ship Gate**: community, utility, trust, experience, accessibility, integrity, architecture, brand, future-readiness, and real-world functionality.
+
 ## Project foundation
 
 This repository is the source of truth for the digital product, brand system, documentation, and implementation work behind UltraWear FC.

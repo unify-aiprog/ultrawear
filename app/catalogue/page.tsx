@@ -14,14 +14,14 @@ export default async function CataloguePage() {
 
       <div className="catalogue-actions">
         <Link className="button button-dark" href="/teams">Explore teams</Link>
-        <Link className="button button-outline" href="/sports">Explore competitions</Link>
+        <Link className="button button-outline" href="/sports">Explore sports</Link>
       </div>
 
       <div className="catalogue-section">
         <div className="section-heading"><span>01</span><h2>SPORTS</h2></div>
         <div className="index-grid">
           {sports.map((sport) => (
-            <Link className="index-card" href={`/sports/${sport.slug}`} key={sport.id}>
+            <Link className="index-card" href="/sports" key={sport.id}>
               <span>SPORT</span><b>{sport.name}</b><small>{sport.description || 'Explore the sporting world.'}</small>
             </Link>
           ))}
@@ -33,12 +33,12 @@ export default async function CataloguePage() {
         <div className="section-heading"><span>02</span><h2>COUNTRIES</h2></div>
         <div className="country-grid">
           {countries.map((country) => (
-            <Link className="country-card" href={`/catalogue/countries/${country.slug}`} key={country.id}>
+            <div className="country-card" key={country.id}>
               <b>{country.name}</b><small>{country.code || 'Explore'}</small>
-            </Link>
+            </div>
           ))}
         </div>
-        {countries.length === 0 && <div className="empty-state">Country navigation will populate with the global data catalogue.</div>}
+        {countries.length === 0 && <div className="empty-state">Country data will populate when the catalogue database is connected.</div>}
       </div>
     </section>
   );
