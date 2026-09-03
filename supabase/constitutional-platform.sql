@@ -59,31 +59,15 @@ language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  current_row community_submissions%rowtype;
-  updated_row community_submissions%rowtype;
-  allowed boolean := false;
+declare current_row community_submissions%rowtype; updated_row community_submissions%rowtype; allowed boolean := false;
 begin
-  if nullif(trim(p_submission_id), '') is null or nullif(trim(p_moderator_id), '') is null then
-    raise exception 'submission id and moderator id are required';
-  end if;
-
+  if nullif(trim(p_submission_id), '') is null or nullif(trim(p_moderator_id), '') is null then raise exception 'submission id and moderator id are required'; end if;
   select * into current_row from community_submissions where id = p_submission_id for update;
   if not found then raise exception 'submission not found'; end if;
-
-  allowed := (current_row.status = 'pending' and p_to_status in ('approved','rejected'))
-    or (current_row.status = 'approved' and p_to_status = 'removed')
-    or (current_row.status in ('rejected','removed') and p_to_status = 'appeal')
-    or (current_row.status = 'appeal' and p_to_status in ('approved','rejected'));
+  allowed := (current_row.status = 'pending' and p_to_status in ('approved','rejected')) or (current_row.status = 'approved' and p_to_status = 'removed') or (current_row.status in ('rejected','removed') and p_to_status = 'appeal') or (current_row.status = 'appeal' and p_to_status in ('approved','rejected'));
   if not allowed then raise exception 'invalid moderation transition: % -> %', current_row.status, p_to_status; end if;
-
-  update community_submissions
-  set status = p_to_status, moderated_at = now(), moderator_id = p_moderator_id, reason = coalesce(p_reason, '')
-  where id = p_submission_id
-  returning * into updated_row;
-
-  insert into community_moderation_audit(submission_id, from_status, to_status, moderator_id, reason)
-  values (p_submission_id, current_row.status, updated_row.status, p_moderator_id, coalesce(p_reason, ''));
+  update community_submissions set status = p_to_status, moderated_at = now(), moderator_id = p_moderator_id, reason = coalesce(p_reason, '') where id = p_submission_id returning * into updated_row;
+  insert into community_moderation_audit(submission_id, from_status, to_status, moderator_id, reason) values (p_submission_id, current_row.status, updated_row.status, p_moderator_id, coalesce(p_reason, ''));
   return to_jsonb(updated_row);
 end;
 $$;
@@ -99,45 +83,24 @@ language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  current_row content_stories%rowtype;
-  updated_row content_stories%rowtype;
-  allowed boolean := false;
-  next_published_at timestamptz;
+declare current_row content_stories%rowtype; updated_row content_stories%rowtype; allowed boolean := false; next_published_at timestamptz;
 begin
-  if nullif(trim(p_story_id), '') is null or nullif(trim(p_actor), '') is null then
-    raise exception 'story id and actor are required';
-  end if;
-
+  if nullif(trim(p_story_id), '') is null or nullif(trim(p_actor), '') is null then raise exception 'story id and actor are required'; end if;
   select * into current_row from content_stories where id = p_story_id for update;
   if not found then raise exception 'story not found'; end if;
-
-  allowed := (current_row.state = 'opportunity' and p_to_state in ('researching','archived'))
-    or (current_row.state = 'researching' and p_to_state in ('drafting','archived'))
-    or (current_row.state = 'drafting' and p_to_state in ('verifying','archived'))
-    or (current_row.state = 'verifying' and p_to_state in ('review','drafting','archived'))
-    or (current_row.state = 'review' and p_to_state in ('approved','drafting','archived'))
-    or (current_row.state = 'approved' and p_to_state in ('published','review'))
-    or (current_row.state = 'published' and p_to_state in ('refresh_due','archived'))
-    or (current_row.state = 'refresh_due' and p_to_state in ('researching','archived'));
+  allowed := (current_row.state = 'opportunity' and p_to_state in ('researching','archived')) or (current_row.state = 'researching' and p_to_state in ('drafting','archived')) or (current_row.state = 'drafting' and p_to_state in ('verifying','archived')) or (current_row.state = 'verifying' and p_to_state in ('review','drafting','archived')) or (current_row.state = 'review' and p_to_state in ('approved','drafting','archived')) or (current_row.state = 'approved' and p_to_state in ('published','review')) or (current_row.state = 'published' and p_to_state in ('refresh_due','archived')) or (current_row.state = 'refresh_due' and p_to_state in ('researching','archived'));
   if not allowed then raise exception 'invalid content transition: % -> %', current_row.state, p_to_state; end if;
-
-  next_published_at := case
-    when p_to_state = 'published' then coalesce(current_row.published_at, p_published_at, now())
-    else current_row.published_at
-  end;
-
-  update content_stories
-  set state = p_to_state, updated_at = now(), published_at = next_published_at
-  where id = p_story_id
-  returning * into updated_row;
-
-  insert into content_audit_log(story_id, action, actor, reason, from_state, to_state, metadata)
-  values (p_story_id, 'state_transition', p_actor, coalesce(p_reason, ''), current_row.state, updated_row.state, '{}'::jsonb);
-
+  next_published_at := case when p_to_state = 'published' then coalesce(current_row.published_at, p_published_at, now()) else current_row.published_at end;
+  update content_stories set state = p_to_state, updated_at = now(), published_at = next_published_at where id = p_story_id returning * into updated_row;
+  insert into content_audit_log(story_id, action, actor, reason, from_state, to_state, metadata) values (p_story_id, 'state_transition', p_actor, coalesce(p_reason, ''), current_row.state, updated_row.state, '{}'::jsonb);
   return to_jsonb(updated_row);
 end;
 $$;
+
+revoke all on function moderate_community_submission(text, text, text, text) from public, anon, authenticated;
+grant execute on function moderate_community_submission(text, text, text, text) to service_role;
+revoke all on function transition_content_story(text, text, text, text, timestamptz) from public, anon, authenticated;
+grant execute on function transition_content_story(text, text, text, text, timestamptz) to service_role;
 
 do $$ declare table_name text; begin
   foreach table_name in array array['sports_source_observations','sports_reconciliation_runs','sports_entity_links','content_stories','content_audit_log','content_claims','trend_signals','editorial_opportunities','community_submissions','community_moderation_audit'] loop
