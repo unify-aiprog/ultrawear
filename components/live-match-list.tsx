@@ -16,24 +16,37 @@ type LiveEvent = {
 export function LiveMatchList({ initialEvents }: { initialEvents: LiveEvent[] }) {
   const [events, setEvents] = useState(initialEvents);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [feedUnavailable, setFeedUnavailable] = useState(false);
 
   useEffect(() => {
     let active = true;
     const refresh = async () => {
       try {
-        const response = await fetch('/api/live', { cache: 'no-store' });
-        if (!response.ok) return;
-        const payload = await response.json() as { events: LiveEvent[]; updatedAt: string };
-        if (active) { setEvents(payload.events); setUpdatedAt(payload.updatedAt); }
-      } catch { /* keep the last known live state */ }
+        const response = await fetch(`/api/live?refresh=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { accept: 'application/json', 'cache-control': 'no-cache' },
+        });
+        if (!response.ok) {
+          if (active) setFeedUnavailable(true);
+          return;
+        }
+        const payload = await response.json() as { events?: LiveEvent[]; updatedAt?: string };
+        if (active) {
+          setEvents(Array.isArray(payload.events) ? payload.events : []);
+          setUpdatedAt(payload.updatedAt ?? null);
+          setFeedUnavailable(false);
+        }
+      } catch {
+        if (active) setFeedUnavailable(true);
+      }
     };
-    const interval = window.setInterval(refresh, 60_000);
+    const interval = window.setInterval(refresh, 30_000);
     refresh();
     return () => { active = false; window.clearInterval(interval); };
   }, []);
 
   if (!events.length) {
-    return <div className="empty-state"><strong>No matches live right now.</strong><span>Live fixtures appear automatically when the feed reports a match in play.</span></div>;
+    return <div className="empty-state"><strong>{feedUnavailable ? 'Live feed temporarily unavailable.' : 'No matches live right now.'}</strong><span>{feedUnavailable ? 'We are retrying automatically. No demo or stale scores are shown.' : 'Live fixtures appear automatically when the verified feed reports a match in play.'}</span></div>;
   }
 
   return (
@@ -47,7 +60,7 @@ export function LiveMatchList({ initialEvents }: { initialEvents: LiveEvent[] })
           </div>
         </article>
       ))}
-      <p className="live-refresh-note">Auto-updates every 60 seconds{updatedAt ? ` · feed checked ${new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}.</p>
+      <p className="live-refresh-note">Auto-updates every 30 seconds{updatedAt ? ` · feed checked ${new Date(updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}.</p>
     </div>
   );
 }
