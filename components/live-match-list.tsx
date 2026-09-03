@@ -15,6 +15,8 @@ type LiveEvent = {
   away_team: { name: string; crest_url: string | null };
 };
 
+const articleImage = (slug: string) => slug === 'the-game-is-bigger-than-the-score' ? '/assets/news-community.svg' : slug === 'built-by-fans-made-for-everyone' ? '/assets/news-matchday.svg' : '/assets/news-sport-world.svg';
+
 export function LiveMatchList({ initialEvents }: { initialEvents: LiveEvent[] }) {
   const [events, setEvents] = useState(initialEvents);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export function LiveMatchList({ initialEvents }: { initialEvents: LiveEvent[] })
           <div className="index-grid">
             {latest.map((article) => (
               <Link className="index-card" href={`/news/${article.slug}`} key={article.slug}>
-                <div className="news-card-image" style={{ backgroundImage: `url(/assets/${article.slug === 'the-game-is-bigger-than-the-score' ? 'news-community.svg' : article.slug === 'built-by-fans-made-for-everyone' ? 'news-matchday.svg' : 'news-sport-world.svg'})` }} aria-hidden="true" />
+                <div aria-hidden="true" style={{ height: 180, marginBottom: 18, backgroundImage: `url(${articleImage(article.slug)})`, backgroundPosition: 'center', backgroundSize: 'cover', border: '1px solid var(--line)' }} />
                 <span>{article.category} · {article.date}</span>
                 <b>{article.title}</b>
                 <small>{article.dek}</small>
