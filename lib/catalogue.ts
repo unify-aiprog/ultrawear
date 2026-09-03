@@ -12,11 +12,25 @@ export async function getSports(): Promise<Sport[]> {
   return data ?? [];
 }
 
+export async function getSport(slug: string): Promise<Sport | null> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return null;
+  const { data } = await supabase.from('sports').select('*').eq('slug', slug).maybeSingle();
+  return data;
+}
+
 export async function getCountries(): Promise<Country[]> {
   const supabase = getSupabaseServerClient();
   if (!supabase) return [];
   const { data } = await supabase.from('countries').select('*').order('name');
   return data ?? [];
+}
+
+export async function getCountry(slug: string): Promise<Country | null> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return null;
+  const { data } = await supabase.from('countries').select('*').eq('slug', slug).maybeSingle();
+  return data;
 }
 
 export async function getCatalogueCompetitions(filters?: { sportId?: string; countryId?: string }): Promise<CatalogueCompetition[]> {
@@ -27,6 +41,13 @@ export async function getCatalogueCompetitions(filters?: { sportId?: string; cou
   if (filters?.countryId) query = query.eq('country_id', filters.countryId);
   const { data } = await query;
   return data ?? [];
+}
+
+export async function getCatalogueCompetition(slug: string): Promise<CatalogueCompetition | null> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return null;
+  const { data } = await supabase.from('competitions_v2').select('*').eq('slug', slug).maybeSingle();
+  return data;
 }
 
 export async function getCatalogueTeams(filters?: { sportId?: string; countryId?: string; organizationId?: string; ageGroup?: string }): Promise<CatalogueTeam[]> {
@@ -41,9 +62,16 @@ export async function getCatalogueTeams(filters?: { sportId?: string; countryId?
   return data ?? [];
 }
 
-export async function getCatalogueTeam(slug: string) {
+export async function getCatalogueTeam(slug: string): Promise<CatalogueTeam | null> {
   const supabase = getSupabaseServerClient();
   if (!supabase) return null;
   const { data } = await supabase.from('teams_v2').select('*').eq('slug', slug).maybeSingle();
   return data;
+}
+
+export async function getTeamCompetitions(teamId: string) {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return [];
+  const { data } = await supabase.from('team_competitions').select('competition_id, season_id, competitions_v2(id,name,slug), seasons(id,name,slug)').eq('team_id', teamId);
+  return data ?? [];
 }
