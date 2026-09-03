@@ -54,26 +54,17 @@ export const footballMatchAdapter: SportsProviderAdapter<FootballDataMatch> = {
     observedAt: new Date().toISOString(),
     freshnessAt: match.status === 'FINISHED' ? undefined : new Date(Date.now() + 5 * 60_000).toISOString(),
     payload: {
-      sport: 'football',
-      providerId: String(match.id),
-      status: match.status,
-      startTime: match.utcDate,
-      competitionId: String(match.competition.id),
-      seasonId: String(match.season.id),
-      homeTeamId: String(match.homeTeam.id),
-      awayTeamId: String(match.awayTeam.id),
-      homeScore: match.score?.fullTime?.home ?? null,
-      awayScore: match.score?.fullTime?.away ?? null,
+      sport: 'football', providerId: String(match.id), status: match.status, startTime: match.utcDate,
+      competitionId: String(match.competition.id), seasonId: String(match.season.id),
+      homeTeamId: String(match.homeTeam.id), awayTeamId: String(match.awayTeam.id),
+      homeScore: match.score?.fullTime?.home ?? null, awayScore: match.score?.fullTime?.away ?? null,
     },
   }),
 };
 
 export async function revalidateSports<T>(adapter: SportsProviderAdapter<T>, options: { from?: Date; to?: Date; confidence?: number } = {}): Promise<RevalidationSummary> {
-  // Revalidation is a trusted server job. Never use the anon client for writes;
-  // keep RLS enabled and use the service-role client only on the server.
   const supabase = getSupabaseAdminClient();
   if (!supabase) throw new Error('Supabase service role is not configured');
-
   const from = (options.from ?? new Date(Date.now() - 2 * 86_400_000)).toISOString().slice(0, 10);
   const to = (options.to ?? new Date(Date.now() + 2 * 86_400_000)).toISOString().slice(0, 10);
   const items = await adapter.fetch({ from, to });
@@ -82,51 +73,33 @@ export async function revalidateSports<T>(adapter: SportsProviderAdapter<T>, opt
   for (const item of items) {
     try {
       const normalized = adapter.normalize(item);
-      const observationId = `${adapter.id}:${normalized.entityType}:${normalized.entityId}:${hashPayload(normalized.payload).slice(0, 16)}`;
+      const contentHash = hashPayload(normalized.payload);
       const observation = createObservation({
-        id: observationId,
-        sourceId: adapter.id,
-        sourceType: adapter.sourceType,
-        observedAt: normalized.observedAt,
-        freshnessAt: normalized.freshnessAt,
-        verification: 'verified',
-        confidence: options.confidence ?? 0.9,
+        id: `${adapter.id}:${normalized.entityType}:${normalized.entityId}:${contentHash.slice(0, 16)}`,
+        sourceId: adapter.id, sourceType: adapter.sourceType, observedAt: normalized.observedAt,
+        freshnessAt: normalized.freshnessAt, verification: 'verified', confidence: options.confidence ?? 0.9,
         payload: normalized.payload,
       });
 
-      const { data: prior, error: priorError } = await supabase
-        .from('sports_source_observations')
+      const { data: prior, error: priorError } = await supabase.from('sports_source_observations')
         .select('id,source_id,source_type,observed_at,freshness_at,verification,confidence,payload')
-        .eq('entity_type', normalized.entityType)
-        .eq('entity_id', normalized.entityId)
-        .order('observed_at', { ascending: false })
-        .limit(20);
+        .eq('entity_type', normalized.entityType).eq('entity_id', normalized.entityId)
+        .order('observed_at', { ascending: false }).limit(20);
       if (priorError) throw priorError;
 
-      const observations = [...(prior ?? []).map(rowToObservation), observation];
-      const result = reconcile(observations, (a, b) => JSON.stringify(a) === JSON.stringify(b));
+      const result = reconcile([...(prior ?? []).map(rowToObservation), observation], (a, b) => JSON.stringify(a) === JSON.stringify(b));
       const { error: observationError } = await supabase.from('sports_source_observations').upsert({
-        id: observation.id,
-        source_id: observation.sourceId,
-        source_type: observation.sourceType,
-        entity_type: normalized.entityType,
-        entity_id: normalized.entityId,
-        observed_at: observation.observedAt,
-        freshness_at: observation.freshnessAt ?? null,
-        verification: observation.verification,
-        confidence: observation.confidence,
-        payload: observation.payload,
-        content_hash: hashPayload(observation.payload),
+        id: observation.id, source_id: observation.sourceId, source_type: observation.sourceType,
+        entity_type: normalized.entityType, entity_id: normalized.entityId, observed_at: observation.observedAt,
+        freshness_at: observation.freshnessAt ?? null, verification: observation.verification,
+        confidence: observation.confidence, payload: observation.payload, content_hash: contentHash,
       }, { onConflict: 'id' });
       if (observationError) throw observationError;
 
+      const winnerId = result.status === 'verified' ? result.observationIds[0] ?? null : null;
       const { error: historyError } = await supabase.from('sports_reconciliation_runs').insert({
-        entity_type: normalized.entityType,
-        entity_id: normalized.entityId,
-        status: result.status,
-        winner_observation_id: result.status === 'verified' ? observation.id : null,
-        observation_ids: result.observationIds,
-        conflict_ids: result.conflicts,
+        entity_type: normalized.entityType, entity_id: normalized.entityId, status: result.status,
+        winner_observation_id: winnerId, observation_ids: result.observationIds, conflict_ids: result.conflicts,
       });
       if (historyError) throw historyError;
 
@@ -138,6 +111,5 @@ export async function revalidateSports<T>(adapter: SportsProviderAdapter<T>, opt
       summary.failed += 1;
     }
   }
-
   return summary;
 }
