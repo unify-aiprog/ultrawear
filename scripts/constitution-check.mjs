@@ -4,7 +4,7 @@ import path from 'node:path';
 const root = process.cwd();
 const failures = [];
 const requiredFiles = [
-  'docs/WEB_CONSTITUTION.md','README.md','app/layout.tsx','app/error.tsx','app/sitemap.ts','app/robots.ts','next.config.ts',
+  'docs/WEB_CONSTITUTION.md','README.md','app/layout.tsx','app/error.tsx','app/loading.tsx','app/sitemap.ts','app/robots.ts','next.config.ts',
   'content-core/contracts.js','content-core/fact-firewall.js','content-core/pipeline.js','content-core/store.js','content-core/editorial-service.js',
   'lib/sports/contracts.ts','lib/sports/persistence.ts','lib/ingest/revalidation.ts','app/api/cron/sports/revalidate/route.ts',
   'lib/trends/contracts.ts','lib/trends/store.ts','lib/privacy/consent.ts','lib/community/moderation.ts','lib/commerce/editorial-separation.ts',
@@ -30,7 +30,7 @@ for (const [label, pattern] of [['provider adapter',/SportsProviderAdapter/],['p
 const firewall = read('content-core/fact-firewall.js');
 for (const [label, pattern] of [['research pack',/buildResearchPack/],['claim verification',/verifyResearchPack/],['unsupported claims',/unsupportedClaimIds/],['conflict detection',/detectConflicts/]]) if (!pattern.test(firewall)) failures.push(`Content trust layer missing: ${label}`);
 const editorial = read('content-core/editorial-service.js');
-for (const [label, pattern] of [['review gate',/verified research pack is required/],['persist story',/saveStory/],['audit trail',/appendStoryAudit/]]) if (!pattern.test(editorial)) failures.push(`Editorial workflow missing: ${label}`);
+for (const [label, pattern] of [['review gate',/verified research pack is required/],['atomic persistence',/transitionStoryAtomically/],['pipeline transition',/transitionStory/]]) if (!pattern.test(editorial)) failures.push(`Editorial workflow missing: ${label}`);
 const privacy = read('lib/privacy/consent.ts');
 for (const [label, pattern] of [['purpose consent',/ConsentPurpose/],['consent enforcement',/canTrack/],['coarse location',/coarseLocation/]]) if (!pattern.test(privacy)) failures.push(`Privacy layer missing: ${label}`);
 const moderation = read('lib/community/moderation.ts');
@@ -41,6 +41,7 @@ const packageJson = fs.existsSync(path.join(root, 'package.json')) ? JSON.parse(
 for (const script of ['test','test:sports','test:platform']) if (!packageJson.scripts?.[script]) failures.push(`Automated test script missing: ${script}`);
 const schema = read('supabase/constitutional-platform.sql');
 for (const table of ['sports_source_observations','sports_reconciliation_runs','content_stories','content_audit_log','content_claims','trend_signals','editorial_opportunities']) if (!schema.includes(`create table if not exists ${table}`)) failures.push(`Persistence schema missing: ${table}`);
+for (const [label, pattern] of [['atomic editorial RPC',/create or replace function transition_content_story/],['RPC restricted to service role',/grant execute on function transition_content_story[^;]*to service_role/i],['community RPC restricted',/grant execute on function moderate_community_submission[^;]*to service_role/i]]) if (!pattern.test(schema)) failures.push(`Persistence security missing: ${label}`);
 const sitemap = read('app/sitemap.ts');
 for (const route of ['/sports','/catalogue','/teams','/fixtures','/live','/news','/about','/contact','/privacy','/terms']) if (!sitemap.includes(`'${route}'`)) failures.push(`Sitemap missing constitutional primary route: ${route}`);
 
