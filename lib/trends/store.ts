@@ -1,4 +1,5 @@
 import { getSupabaseAdminClient } from '@/lib/supabase';
+import { canTrack, type ConsentRecord } from '@/lib/privacy/consent';
 import { createTrendObservation, scoreTrend, type TrendObservation } from './contracts';
 
 function db() {
@@ -7,8 +8,11 @@ function db() {
   return client;
 }
 
-export async function saveTrendObservation(input: TrendObservation) {
+export async function saveTrendObservation(input: TrendObservation, consentRecords: ConsentRecord[] = []) {
   const trend = createTrendObservation(input);
+  if ((trend.locationScope === 'near_you' || trend.locationScope === 'personalized') && !canTrack('personalization', consentRecords)) {
+    throw new Error('Personalization consent is required for near-you or personalized trend observations');
+  }
   const score = scoreTrend(trend);
   const { data, error } = await db().from('trend_signals').upsert({
     id: trend.id, source_id: trend.sourceId, source_type: trend.sourceType, topic_key: trend.topicKey,
