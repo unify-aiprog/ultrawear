@@ -18,14 +18,14 @@ function rowToStory(row) {
 
 export async function saveStory(input) {
   const story = createStory(input);
-  if (story.state === 'approved' || story.state === 'published') {
-    throw new Error('Approved and published stories must use the editorial transition gate');
+  if (story.state !== 'opportunity') {
+    throw new Error('Direct story persistence is limited to opportunity state; use the editorial transition gate');
   }
   const { data, error } = await db().from('content_stories').upsert({
     id: story.id, type: story.type, title: story.title, canonical_slug: story.canonicalSlug,
     summary: story.summary, state: story.state, signal_ids: story.signalIds, entities: story.entities,
     evidence: story.evidence, author: story.author, editor: story.editor,
-    published_at: story.publishedAt, updated_at: story.updatedAt ?? new Date().toISOString(),
+    published_at: null, updated_at: story.updatedAt ?? new Date().toISOString(),
   }, { onConflict: 'id' }).select('*').single();
   if (error || !data) throw new Error(`Unable to persist story: ${error?.message ?? 'unknown error'}`);
   return rowToStory(data);
