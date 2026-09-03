@@ -9,13 +9,29 @@ jobs:
   sync-catalogue:
     runs-on: ubuntu-latest
     steps:
-      - name: Sync catalogue
+      - name: Check catalogue sync configuration
+        id: config
         env:
           ULTRAWEAR_INGEST_URL: ${{ secrets.ULTRAWEAR_INGEST_URL }}
           ULTRAWEAR_INGEST_SECRET: ${{ secrets.ULTRAWEAR_INGEST_SECRET }}
         run: |
-          test -n "$ULTRAWEAR_INGEST_URL"
-          test -n "$ULTRAWEAR_INGEST_SECRET"
+          if [[ -n "$ULTRAWEAR_INGEST_URL" && -n "$ULTRAWEAR_INGEST_SECRET" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "Catalogue sync is configured."
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Catalogue sync is not configured; skipping scheduled sync."
+            echo "Configure ULTRAWEAR_INGEST_URL and ULTRAWEAR_INGEST_SECRET to enable it."
+          fi
+
+      - name: Sync catalogue
+        if: steps.config.outputs.configured == 'true'
+        env:
+          ULTRAWEAR_INGEST_URL: ${{ secrets.ULTRAWEAR_INGEST_URL }}
+          ULTRAWEAR_INGEST_SECRET: ${{ secrets.ULTRAWEAR_INGEST_SECRET }}
+        run: |
+          set -euo pipefail
           curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-delay 2 \
             -X POST "$ULTRAWEAR_INGEST_URL" \
             -H "x-ingest-secret: $ULTRAWEAR_INGEST_SECRET"
