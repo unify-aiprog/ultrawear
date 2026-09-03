@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { revalidateSports, footballMatchAdapter } from '@/lib/ingest/revalidation';
+import { revalidateFootballCatalogue } from '@/lib/sports/revalidation-jobs';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,10 +12,12 @@ function authorized(request: Request) {
 
 export async function GET(request: Request) {
   if (!authorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   try {
-    const result = await revalidateSports(footballMatchAdapter);
-    return NextResponse.json({ ok: true, result });
+    const [events, catalogue] = await Promise.all([
+      revalidateSports(footballMatchAdapter),
+      revalidateFootballCatalogue(),
+    ]);
+    return NextResponse.json({ ok: true, result: { events, catalogue } });
   } catch (error) {
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Revalidation failed' }, { status: 503 });
   }
