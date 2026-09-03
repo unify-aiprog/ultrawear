@@ -31,7 +31,6 @@ jobs:
           ULTRAWEAR_INGEST_SECRET: ${{ secrets.ULTRAWEAR_INGEST_SECRET }}
         run: |
           set -euo pipefail
-          curl --fail-with-body --silent --show-error \
-            --retry 3 --retry-delay 2 \
+          curl --fail-with-body --silent --show-error --retry 3 --retry-delay 2 \
             -X POST "$ULTRAWEAR_STANDINGS_URL" \
             -H "x-ingest-secret: $ULTRAWEAR_INGEST_SECRET"
