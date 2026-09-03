@@ -5,7 +5,8 @@ create table if not exists sports_source_observations (
   id text primary key, source_id text not null, source_type text not null check (source_type in ('official','secondary','community','editorial')), entity_type text not null, entity_id text not null, observed_at timestamptz not null, freshness_at timestamptz,
   verification text not null check (verification in ('verified','unverified','conflicted','stale')), confidence numeric not null default 0 check (confidence >= 0 and confidence <= 1), payload jsonb not null, content_hash text, created_at timestamptz not null default now()
 );
-create unique index if not exists sports_source_observations_hash_uidx on sports_source_observations(source_id, content_hash) where content_hash is not null;
+drop index if exists sports_source_observations_hash_uidx;
+create unique index if not exists sports_source_observations_hash_uidx on sports_source_observations(source_id, entity_type, entity_id, content_hash) where content_hash is not null;
 create index if not exists sports_source_observations_entity_idx on sports_source_observations(entity_type, entity_id, observed_at desc);
 create index if not exists sports_source_observations_freshness_idx on sports_source_observations(freshness_at);
 create table if not exists sports_reconciliation_runs (
@@ -49,16 +50,7 @@ create table if not exists community_moderation_audit (
 );
 create index if not exists community_moderation_audit_submission_idx on community_moderation_audit(submission_id, created_at desc);
 
-create or replace function moderate_community_submission(
-  p_submission_id text,
-  p_to_status text,
-  p_moderator_id text,
-  p_reason text default ''
-) returns jsonb
-language plpgsql
-security definer
-set search_path = public
-as $$
+create or replace function moderate_community_submission(p_submission_id text, p_to_status text, p_moderator_id text, p_reason text default '') returns jsonb language plpgsql security definer set search_path = public as $$
 declare current_row community_submissions%rowtype; updated_row community_submissions%rowtype; allowed boolean := false;
 begin
   if nullif(trim(p_submission_id), '') is null or nullif(trim(p_moderator_id), '') is null then raise exception 'submission id and moderator id are required'; end if;
@@ -69,20 +61,9 @@ begin
   update community_submissions set status = p_to_status, moderated_at = now(), moderator_id = p_moderator_id, reason = coalesce(p_reason, '') where id = p_submission_id returning * into updated_row;
   insert into community_moderation_audit(submission_id, from_status, to_status, moderator_id, reason) values (p_submission_id, current_row.status, updated_row.status, p_moderator_id, coalesce(p_reason, ''));
   return to_jsonb(updated_row);
-end;
-$$;
+end; $$;
 
-create or replace function transition_content_story(
-  p_story_id text,
-  p_to_state text,
-  p_actor text,
-  p_reason text default '',
-  p_published_at timestamptz default null
-) returns jsonb
-language plpgsql
-security definer
-set search_path = public
-as $$
+create or replace function transition_content_story(p_story_id text, p_to_state text, p_actor text, p_reason text default '', p_published_at timestamptz default null) returns jsonb language plpgsql security definer set search_path = public as $$
 declare current_row content_stories%rowtype; updated_row content_stories%rowtype; allowed boolean := false; next_published_at timestamptz;
 begin
   if nullif(trim(p_story_id), '') is null or nullif(trim(p_actor), '') is null then raise exception 'story id and actor are required'; end if;
@@ -94,8 +75,7 @@ begin
   update content_stories set state = p_to_state, updated_at = now(), published_at = next_published_at where id = p_story_id returning * into updated_row;
   insert into content_audit_log(story_id, action, actor, reason, from_state, to_state, metadata) values (p_story_id, 'state_transition', p_actor, coalesce(p_reason, ''), current_row.state, updated_row.state, '{}'::jsonb);
   return to_jsonb(updated_row);
-end;
-$$;
+end; $$;
 
 revoke all on function moderate_community_submission(text, text, text, text) from public, anon, authenticated;
 grant execute on function moderate_community_submission(text, text, text, text) to service_role;
