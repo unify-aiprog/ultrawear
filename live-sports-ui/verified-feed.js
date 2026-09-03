@@ -54,8 +54,23 @@ function renderFeedStatus(container, message) {
   container.innerHTML = `<div class="live-feed-status" role="status"><span>${message}</span></div>`;
 }
 
+function syncHomeStatus(mode) {
+  const feedStatus = document.querySelector('#feed-status-label');
+  const spotlightStatus = document.querySelector('#spotlight-status');
+  const spotlightMeta = document.querySelector('#spotlight-meta');
+  if (mode === 'news') {
+    if (feedStatus) feedStatus.textContent = 'LATEST NEWS · NO LIVE MATCH';
+    if (spotlightStatus) spotlightStatus.textContent = 'LATEST NEWS';
+    if (spotlightMeta) spotlightMeta.textContent = 'Editorial · updated daily';
+  } else if (mode === 'live') {
+    if (feedStatus) feedStatus.textContent = 'VERIFIED LIVE FEED';
+    if (spotlightStatus) spotlightStatus.textContent = 'LIVE MATCH';
+  }
+}
+
 function renderNoLiveState(container) {
   renderLatestNews(container);
+  syncHomeStatus('news');
 }
 
 async function getEvents() {
@@ -87,6 +102,7 @@ export function createLiveFeedController(container) {
         const { events, verified } = await fetchVerifiedEvents();
         if (verified && events.length) {
           renderMatchFeed(container, events.map(toCard));
+          syncHomeStatus('live');
           knownMomentKeys = animateNewMoments(container, knownMomentKeys);
           return { verified: true, count: events.length, mode: 'live' };
         }
@@ -118,6 +134,7 @@ export function createLiveSpotlightController(container) {
         const { events, verified } = await fetchVerifiedEvents();
         if (verified && events.length) {
           renderMatchFeed(container, [toCard(events[0])]);
+          syncHomeStatus('live');
           knownMomentKeys = animateNewMoments(container, knownMomentKeys);
           return { verified: true, count: 1, sport: events[0].sport, mode: 'live' };
         }
@@ -126,12 +143,14 @@ export function createLiveSpotlightController(container) {
           return { verified: false, count: 0, sport: DEMO_MATCHES[0]?.sport, mode: 'demo' };
         }
         renderLatestNews(container, { compact: true });
+        syncHomeStatus('news');
       } catch {
         if (isLocalPreview()) {
           renderMatchFeed(container, DEMO_MATCHES.slice(0, 1));
           return { verified: false, count: 0, sport: DEMO_MATCHES[0]?.sport, mode: 'demo' };
         }
         renderLatestNews(container, { compact: true });
+        syncHomeStatus('news');
       }
       knownMomentKeys = new Set();
       return { verified: false, count: 0, sport: undefined, mode: 'news' };
