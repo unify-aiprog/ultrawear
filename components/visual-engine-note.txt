@@ -1,1 +1,0 @@
-Visual engine implementation is documented in docs/VISUAL_ENGINE.md. See components/ultra-visual-engine.tsx for the homepage composition.
