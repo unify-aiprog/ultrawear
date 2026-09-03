@@ -12,6 +12,11 @@ create table if not exists sports_reconciliation_runs (
   id bigserial primary key, entity_type text not null, entity_id text not null, status text not null check (status in ('verified','conflicted','insufficient_evidence')), winner_observation_id text references sports_source_observations(id) on delete set null, observation_ids jsonb not null default '[]'::jsonb, conflict_ids jsonb not null default '[]'::jsonb, checked_at timestamptz not null default now()
 );
 create index if not exists sports_reconciliation_entity_idx on sports_reconciliation_runs(entity_type, entity_id, checked_at desc);
+create table if not exists sports_entity_links (
+  id bigserial primary key, entity_type text not null, canonical_entity_id text not null, provider text not null, provider_entity_id text not null, created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
+  unique(entity_type, provider, provider_entity_id), unique(entity_type, canonical_entity_id, provider)
+);
+create index if not exists sports_entity_links_canonical_idx on sports_entity_links(entity_type, canonical_entity_id);
 create table if not exists content_stories (
   id text primary key, type text not null, title text not null, canonical_slug text not null unique, summary text not null default '', state text not null, signal_ids jsonb not null default '[]'::jsonb, entities jsonb not null default '[]'::jsonb, evidence jsonb not null default '[]'::jsonb, author text, editor text, published_at timestamptz, updated_at timestamptz not null default now(), created_at timestamptz not null default now()
 );
@@ -44,11 +49,8 @@ create table if not exists community_moderation_audit (
 );
 create index if not exists community_moderation_audit_submission_idx on community_moderation_audit(submission_id, created_at desc);
 
--- Platform persistence is trusted server data. RLS is enabled so the anon/authenticated roles
--- cannot read or mutate editorial, provenance, trend, or moderation records accidentally.
--- The service-role client used by trusted server jobs bypasses RLS as intended.
 do $$ declare table_name text; begin
-  foreach table_name in array array['sports_source_observations','sports_reconciliation_runs','content_stories','content_audit_log','content_claims','trend_signals','editorial_opportunities','community_submissions','community_moderation_audit'] loop
+  foreach table_name in array array['sports_source_observations','sports_reconciliation_runs','sports_entity_links','content_stories','content_audit_log','content_claims','trend_signals','editorial_opportunities','community_submissions','community_moderation_audit'] loop
     execute format('alter table %I enable row level security', table_name);
   end loop;
 end $$;
