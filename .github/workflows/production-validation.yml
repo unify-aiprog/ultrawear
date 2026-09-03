@@ -7,16 +7,6 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate production health
-        env:
-          ULTRAWEAR_PRODUCTION_URL: ${{ secrets.ULTRAWEAR_PRODUCTION_URL }}
-        run: |
-          set -euo pipefail
-          test -n "$ULTRAWEAR_PRODUCTION_URL"
-          response="$(curl --fail --silent --show-error --location "$ULTRAWEAR_PRODUCTION_URL/api/health")"
-          echo "$response"
-          echo "$response" | grep -q '"status":"healthy"'
-
       - name: Validate protected revalidation endpoint
         env:
           ULTRAWEAR_PRODUCTION_URL: ${{ secrets.ULTRAWEAR_PRODUCTION_URL }}
@@ -26,6 +16,18 @@ jobs:
           test -n "$ULTRAWEAR_PRODUCTION_URL"
           test -n "$SPORTS_REVALIDATION_CRON_SECRET"
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' --location "$ULTRAWEAR_PRODUCTION_URL/api/cron/sports/revalidate")" = "401"
-          curl --fail --silent --show-error --location \
+          response="$(curl --fail --silent --show-error --location \
             -H "Authorization: Bearer $SPORTS_REVALIDATION_CRON_SECRET" \
-            "$ULTRAWEAR_PRODUCTION_URL/api/cron/sports/revalidate"
+            "$ULTRAWEAR_PRODUCTION_URL/api/cron/sports/revalidate")"
+          echo "$response"
+          echo "$response" | jq -e '.ok == true' >/dev/null
+
+      - name: Validate production health after sync
+        env:
+          ULTRAWEAR_PRODUCTION_URL: ${{ secrets.ULTRAWEAR_PRODUCTION_URL }}
+        run: |
+          set -euo pipefail
+          test -n "$ULTRAWEAR_PRODUCTION_URL"
+          response="$(curl --fail --silent --show-error --location "$ULTRAWEAR_PRODUCTION_URL/api/health")"
+          echo "$response"
+          echo "$response" | jq -e '.status == "healthy" and .ok == true' >/dev/null
