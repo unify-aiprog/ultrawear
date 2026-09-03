@@ -1,0 +1,2 @@
+export const metadata = { title: 'Shop' };
+export default function ShopPage() { return <section className="section prose-page"><p className="eyebrow">ULTRAWEAR</p><h1>WEAR<br /><em>THE CULTURE.</em></h1><p>Football-inspired today. Sports and lifestyle tomorrow. UltraWear is just getting started.</p><div className="empty-state">Storefront integration is intentionally deferred for this launch sprint. This page is a teaser only.</div></section>; }
