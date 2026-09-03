@@ -1,9 +1,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { canTrack, coarseLocation } from './privacy/consent';
-import { canModerate } from './community/moderation';
-import { normalizeLocation, scoreTrend } from './trends/contracts';
-import { requireCommercialDisclosure } from './commerce/editorial-separation';
+import { canTrack, coarseLocation } from './privacy/consent.ts';
+import { canModerate } from './community/moderation.ts';
+import { normalizeLocation, scoreTrend } from './trends/contracts.ts';
+import { requireCommercialDisclosure } from './commerce/editorial-separation.ts';
 
 describe('constitutional platform contracts', () => {
   it('requires explicit consent for tracking and coarse-grains location', () => {
