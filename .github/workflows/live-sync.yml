@@ -1,0 +1,21 @@
+name: UltraWear Live Sync
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  sync-live:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger live sync
+        env:
+          ULTRAWEAR_LIVE_SYNC_URL: ${{ secrets.ULTRAWEAR_LIVE_SYNC_URL }}
+          ULTRAWEAR_LIVE_SYNC_SECRET: ${{ secrets.ULTRAWEAR_LIVE_SYNC_SECRET }}
+        run: |
+          test -n "$ULTRAWEAR_LIVE_SYNC_URL"
+          test -n "$ULTRAWEAR_LIVE_SYNC_SECRET"
+          curl --fail-with-body --silent --show-error \
+            -X POST "$ULTRAWEAR_LIVE_SYNC_URL" \
+            -H "x-ingest-secret: $ULTRAWEAR_LIVE_SYNC_SECRET"

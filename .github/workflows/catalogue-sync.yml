@@ -1,0 +1,21 @@
+name: UltraWear Catalogue Sync
+
+on:
+  schedule:
+    - cron: '15 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync-catalogue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync catalogue
+        env:
+          ULTRAWEAR_INGEST_URL: ${{ secrets.ULTRAWEAR_INGEST_URL }}
+          ULTRAWEAR_INGEST_SECRET: ${{ secrets.ULTRAWEAR_INGEST_SECRET }}
+        run: |
+          test -n "$ULTRAWEAR_INGEST_URL"
+          test -n "$ULTRAWEAR_INGEST_SECRET"
+          curl --fail-with-body --silent --show-error \
+            -X POST "$ULTRAWEAR_INGEST_URL" \
+            -H "x-ingest-secret: $ULTRAWEAR_INGEST_SECRET"

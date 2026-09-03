@@ -1,0 +1,21 @@
+name: UltraWear Standings Sync
+
+on:
+  schedule:
+    - cron: '45 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync-standings:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync standings
+        env:
+          ULTRAWEAR_STANDINGS_URL: ${{ secrets.ULTRAWEAR_STANDINGS_URL }}
+          ULTRAWEAR_INGEST_SECRET: ${{ secrets.ULTRAWEAR_INGEST_SECRET }}
+        run: |
+          test -n "$ULTRAWEAR_STANDINGS_URL"
+          test -n "$ULTRAWEAR_INGEST_SECRET"
+          curl --fail-with-body --silent --show-error \
+            -X POST "$ULTRAWEAR_STANDINGS_URL" \
+            -H "x-ingest-secret: $ULTRAWEAR_INGEST_SECRET"
