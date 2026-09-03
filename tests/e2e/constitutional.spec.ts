@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const primaryRoutes = ['/', '/sports', '/news', '/about', '/contact', '/privacy', '/terms'];
 
+
 test('home exposes the constitutional experience baseline', async ({ page }) => {
   const started = Date.now();
   const response = await page.goto('/');
@@ -28,6 +29,19 @@ test('primary routes resolve without a broken navigation destination', async ({ 
     const response = await page.goto(route);
     expect(response?.status(), `${route} should resolve`).toBeLessThan(400);
     await expect(page.locator('body')).toBeVisible();
+  }
+});
+
+test('protected mutation APIs reject unauthenticated requests', async ({ request }) => {
+  const checks = [
+    ['/api/editorial/stories', { action: 'create', story: {} }],
+    ['/api/community/submit', { body: 'unauthenticated test' }],
+    ['/api/community/moderate', { submissionId: 'missing', to: 'approved', reason: 'test' }],
+  ] as const;
+
+  for (const [endpoint, data] of checks) {
+    const response = await request.post(endpoint, { data });
+    expect(response.status(), `${endpoint} should reject unauthenticated mutation`).toBe(401);
   }
 });
 
