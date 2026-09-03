@@ -37,4 +37,6 @@ This document maps the Web Constitution to executable repository controls. A pri
 - Connect real trend sources and analytics/advertising providers only behind the consent contracts.
 - Finish product UI around the canonical data/content layers.
 
+The canonical sports graph is an internal data model. It is not a public storefront or catalogue page. Public product scope remains sports, news, information, stories, culture and community.
+
 These are live integration/product backlogs, not permissions to bypass the Ship Gate.
