@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { articles } from '@/lib/editorial';
 
 type LiveEvent = {
   id: string;
@@ -12,6 +14,8 @@ type LiveEvent = {
   home_team: { name: string; crest_url: string | null };
   away_team: { name: string; crest_url: string | null };
 };
+
+const articleImage = (slug: string) => slug === 'the-game-is-bigger-than-the-score' ? '/assets/news-community.svg' : slug === 'built-by-fans-made-for-everyone' ? '/assets/news-matchday.svg' : '/assets/news-sport-world.svg';
 
 export function LiveMatchList({ initialEvents }: { initialEvents: LiveEvent[] }) {
   const [events, setEvents] = useState(initialEvents);
@@ -46,7 +50,28 @@ export function LiveMatchList({ initialEvents }: { initialEvents: LiveEvent[] })
   }, []);
 
   if (!events.length) {
-    return <div className="empty-state"><strong>{feedUnavailable ? 'Live feed temporarily unavailable.' : 'No matches live right now.'}</strong><span>{feedUnavailable ? 'We are retrying automatically. No demo or stale scores are shown.' : 'Live fixtures appear automatically when the verified feed reports a match in play.'}</span></div>;
+    const latest = articles.slice(0, 3);
+    return (
+      <div className="live-empty-with-news">
+        <div className="empty-state">
+          <strong>{feedUnavailable ? 'No verified live match right now.' : 'No match is live right now.'}</strong>
+          <span>{feedUnavailable ? 'The verified score feed is being retried automatically.' : 'Instead of showing a dead end, catch up on the latest UltraWear FC stories.'}</span>
+        </div>
+        <section className="detail-section" aria-labelledby="latest-news-title">
+          <div className="section-heading"><span>NEWS</span><h2 id="latest-news-title">LATEST.</h2></div>
+          <div className="index-grid">
+            {latest.map((article) => (
+              <Link className="index-card" href={`/news/${article.slug}`} key={article.slug}>
+                <div aria-hidden="true" style={{ height: 180, marginBottom: 18, backgroundImage: `url(${articleImage(article.slug)})`, backgroundPosition: 'center', backgroundSize: 'cover', border: '1px solid var(--line)' }} />
+                <span>{article.category} · {article.date}</span>
+                <b>{article.title}</b>
+                <small>{article.dek}</small>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </div>
+    );
   }
 
   return (
