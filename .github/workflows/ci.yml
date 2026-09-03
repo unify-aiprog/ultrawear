@@ -18,6 +18,10 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Constitution gate
         run: npm run constitution:check
+      - name: Content trust tests
+        run: npm test
+      - name: Sports trust tests
+        run: npm run test:sports
       - name: Type check
         run: npm run check
       - name: Production build
