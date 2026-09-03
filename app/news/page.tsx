@@ -1,3 +1,7 @@
 import Link from 'next/link';
-export const metadata = { title: 'News' };
-export default function NewsPage() { return <section className="section"><p className="eyebrow">THE FEED</p><h1 className="page-title">SPORT.<br /><em>UNFILTERED.</em></h1><p className="lede dark">Original sport, culture and community stories will live here.</p><div className="index-grid"><Link className="index-card" href="/news"><span>CULTURE</span><b>The game is bigger than the score.</b><small>Editorial · Coming in launch content pass</small></Link><Link className="index-card" href="/news"><span>PEOPLE</span><b>Built by fans. Made for everyone.</b><small>Editorial · Coming in launch content pass</small></Link></div></section>; }
+import { articles } from '@/lib/editorial';
+
+export const metadata = { title: 'News & Culture' };
+export const revalidate = 3600;
+
+export default function NewsPage() { return <div className="page-wrap"><section className="page-hero"><p className="eyebrow">THE FEED · SPORT & CULTURE</p><h1>Sport.<br /><em>unfiltered.</em></h1><p>Original stories about sport, culture, people and the communities that make the game matter.</p></section><section className="detail-section"><div className="section-heading"><span>01</span><h2>EDITORIAL.</h2></div><div className="index-grid">{articles.map((article) => <Link className="index-card" href={`/news/${article.slug}`} key={article.slug}><span>{article.category} · {article.date}</span><b>{article.title}</b><small>{article.dek}</small></Link>)}</div></section></div>; }
