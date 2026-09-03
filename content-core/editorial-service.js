@@ -1,6 +1,6 @@
 import { transitionStory } from './pipeline.js';
 import { verifyResearchPack } from './fact-firewall.js';
-import { appendStoryAudit, saveStory } from './store.js';
+import { transitionStoryAtomically } from './store.js';
 
 export async function advanceStory(story, to, { actor, reason = '', researchPack = null } = {}) {
   if (to === 'approved' || to === 'published') {
@@ -10,7 +10,15 @@ export async function advanceStory(story, to, { actor, reason = '', researchPack
   }
 
   const result = transitionStory(story, to, { actor, reason });
-  await saveStory(result.story);
-  await appendStoryAudit({ storyId: story.id, action: result.audit.action, actor, reason, fromState: result.audit.from, toState: result.audit.to });
-  return result;
+  const persistedStory = await transitionStoryAtomically({
+    storyId: story.id,
+    toState: result.story.state,
+    actor,
+    reason,
+    publishedAt: result.story.publishedAt,
+  });
+  return {
+    story: persistedStory,
+    audit: { ...result.audit, story: persistedStory },
+  };
 }
