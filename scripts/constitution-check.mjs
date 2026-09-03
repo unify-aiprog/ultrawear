@@ -8,7 +8,10 @@ const requiredFiles = [
   'content-core/contracts.js','content-core/fact-firewall.js','content-core/pipeline.js','content-core/store.js','content-core/editorial-service.js',
   'lib/sports/contracts.ts','lib/sports/persistence.ts','lib/ingest/revalidation.ts','app/api/cron/sports/revalidate/route.ts',
   'lib/trends/contracts.ts','lib/trends/store.ts','lib/privacy/consent.ts','lib/community/moderation.ts','lib/commerce/editorial-separation.ts',
-  'supabase/constitutional-platform.sql','.github/workflows/sports-revalidation.yml','playwright.config.ts','tests/e2e/constitutional.spec.ts',
+  'app/api/health/route.ts','app/api/editorial/stories/route.ts','app/api/community/submit/route.ts','app/api/community/moderate/route.ts',
+  'supabase/constitutional-platform.sql','supabase/catalogue-schema-v2.sql',
+  '.github/workflows/sports-revalidation.yml','.github/workflows/production-validation.yml','docs/production-validation.md',
+  'playwright.config.ts','tests/e2e/constitutional.spec.ts',
 ];
 for (const file of requiredFiles) if (!fs.existsSync(path.join(root, file))) failures.push(`Missing constitutional foundation file: ${file}`);
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -33,6 +36,17 @@ const editorial = read('content-core/editorial-service.js');
 for (const [label, pattern] of [['review gate',/verified research pack is required/],['atomic persistence',/transitionStoryAtomically/],['pipeline transition',/transitionStory/]]) if (!pattern.test(editorial)) failures.push(`Editorial workflow missing: ${label}`);
 const store = read('content-core/store.js');
 if (!/story\.state !== 'opportunity'/.test(store) || !/Direct story persistence is limited/.test(store)) failures.push('Direct editorial state injection remains possible');
+const editorialRoute = read('app/api/editorial/stories/route.ts');
+for (const [label, pattern] of [
+  ['bearer authentication',/authorization.*Bearer/i],
+  ['server role verification',/app_metadata\?\.role/],
+  ['server-generated story id',/id: randomUUID\(\)/],
+  ['authenticated author identity',/author: user\.id/],
+]) if (!pattern.test(editorialRoute)) failures.push(`Editorial API safeguard missing: ${label}`);
+const communitySubmit = read('app/api/community/submit/route.ts');
+for (const [label, pattern] of [['bearer authentication',/authorization.*Bearer/i],['server author identity',/authorId: user\.id/],['pending default',/status: 'pending'/]]) if (!pattern.test(communitySubmit)) failures.push(`Community submission safeguard missing: ${label}`);
+const communityModerate = read('app/api/community/moderate/route.ts');
+for (const [label, pattern] of [['bearer authentication',/authorization.*Bearer/i],['moderator role verification',/app_metadata\?\.role/],['authoritative submission load',/getSubmission\(submissionId\)/],['atomic moderation',/moderateAndSave/]]) if (!pattern.test(communityModerate)) failures.push(`Community moderation safeguard missing: ${label}`);
 const privacy = read('lib/privacy/consent.ts');
 for (const [label, pattern] of [['purpose consent',/ConsentPurpose/],['consent enforcement',/canTrack/],['coarse location',/coarseLocation/]]) if (!pattern.test(privacy)) failures.push(`Privacy layer missing: ${label}`);
 const trends = read('lib/trends/store.ts');
@@ -49,8 +63,19 @@ if (!packageJson.devDependencies?.['@playwright/test']) failures.push('Browser t
 const browserConfig = read('playwright.config.ts');
 for (const [label, pattern] of [['browser test directory',/testDir: '\.\/tests\/e2e'/],['base URL',/baseURL: 'http:\/\/127\.0\.0\.1:3000'/],['production web server',/command: 'npm run start/]]) if (!pattern.test(browserConfig)) failures.push(`Browser test configuration missing: ${label}`);
 const schema = read('supabase/constitutional-platform.sql');
-for (const table of ['sports_source_observations','sports_reconciliation_runs','content_stories','content_audit_log','content_claims','trend_signals','editorial_opportunities']) if (!schema.includes(`create table if not exists ${table}`)) failures.push(`Persistence schema missing: ${table}`);
+for (const table of ['sports_source_observations','sports_reconciliation_runs','content_stories','content_audit_log','content_claims','trend_signals','editorial_opportunities','community_submissions','community_moderation_audit']) if (!schema.includes(`create table if not exists ${table}`)) failures.push(`Persistence schema missing: ${table}`);
 for (const [label, pattern] of [['atomic editorial RPC',/create or replace function transition_content_story/],['RPC restricted to service role',/grant execute on function transition_content_story[^;]*to service_role/i],['community RPC restricted',/grant execute on function moderate_community_submission[^;]*to service_role/i],['entity-scoped observation uniqueness',/sports_source_observations\(source_id, entity_type, entity_id, content_hash\)/]]) if (!pattern.test(schema)) failures.push(`Persistence security missing: ${label}`);
+const productionWorkflow = read('.github/workflows/production-validation.yml');
+for (const [label, pattern] of [
+  ['production URL secret',/ULTRAWEAR_PRODUCTION_URL/],
+  ['revalidation secret',/SPORTS_REVALIDATION_CRON_SECRET/],
+  ['unauthenticated rejection check',/ = "401"/],
+  ['successful revalidation check',/\.ok == true/],
+  ['post-sync health check',/api\/health/],
+  ['healthy status requirement',/\.status == "healthy"/],
+]) if (!pattern.test(productionWorkflow)) failures.push(`Production validation gate missing: ${label}`);
+const health = read('app/api/health/route.ts');
+for (const [label, pattern] of [['health endpoint',/export async function GET/],['database check',/supabase\.from\('sports'\)/],['freshness check',/STALE_AFTER_MINUTES/],['healthy result',/status === 'healthy'/]]) if (!pattern.test(health)) failures.push(`Health gate missing: ${label}`);
 const sitemap = read('app/sitemap.ts');
 for (const route of ['/sports','/catalogue','/teams','/fixtures','/live','/news','/about','/contact','/privacy','/terms']) if (!sitemap.includes(`'${route}'`)) failures.push(`Sitemap missing constitutional primary route: ${route}`);
 
