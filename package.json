@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "test:a11y": "playwright test tests/a11y.spec.ts",
     "test:quality": "npm run constitution:check && npm run check && npm run lint",
+    "test:weekend": "npm run test:quality && npm run build && npm run test:e2e",
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
