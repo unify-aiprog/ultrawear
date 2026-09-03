@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { advanceStory } from '@/content-core/editorial-service';
-import { saveStory } from '@/content-core/store';
+import { getStory, saveStory } from '@/content-core/store';
 import { getSupabaseServerClient } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -24,12 +24,21 @@ export async function POST(request: Request) {
     const body = await request.json();
     if (body?.action === 'create') {
       if (!body.story || typeof body.story !== 'object') return NextResponse.json({ error: 'story is required' }, { status: 400 });
-      const story = await saveStory({ ...body.story, author: body.story.author ?? user.id, editor: user.id });
+      const storyInput = { ...body.story, state: 'opportunity', author: body.story.author ?? user.id, editor: user.id, publishedAt: null };
+      const story = await saveStory(storyInput);
       return NextResponse.json({ ok: true, story }, { status: 201 });
     }
     if (body?.action === 'advance') {
-      if (!body.story || typeof body.to !== 'string') return NextResponse.json({ error: 'story and target state are required' }, { status: 400 });
-      const result = await advanceStory(body.story, body.to, { actor: user.id, reason: typeof body.reason === 'string' ? body.reason : '', researchPack: body.researchPack ?? null });
+      const storyId = typeof body.storyId === 'string' ? body.storyId.trim() : '';
+      const to = typeof body.to === 'string' ? body.to : '';
+      if (!storyId || !to) return NextResponse.json({ error: 'storyId and target state are required' }, { status: 400 });
+      const story = await getStory(storyId);
+      if (!story) return NextResponse.json({ error: 'Story not found' }, { status: 404 });
+      const result = await advanceStory(story, to, {
+        actor: user.id,
+        reason: typeof body.reason === 'string' ? body.reason : '',
+        researchPack: body.researchPack ?? null,
+      });
       return NextResponse.json({ ok: true, story: result.story, audit: result.audit });
     }
     return NextResponse.json({ error: 'Unsupported editorial action' }, { status: 400 });
