@@ -12,6 +12,10 @@ const requiredFiles = [
   'app/sitemap.ts',
   'app/robots.ts',
   'next.config.ts',
+  'content-core/contracts.js',
+  'content-core/fact-firewall.js',
+  'content-core/pipeline.js',
+  'lib/sports/contracts.ts',
 ];
 
 for (const file of requiredFiles) {
@@ -43,6 +47,14 @@ for (const [label, pattern] of [
   if (!pattern.test(layout)) failures.push(`Experience standard not enforced in app/layout.tsx: ${label}`);
 }
 
+const css = fs.existsSync(path.join(root, 'app/globals.css')) ? read('app/globals.css') : '';
+for (const [label, pattern] of [
+  ['visible focus', /:focus-visible/],
+  ['reduced motion', /prefers-reduced-motion/],
+]) {
+  if (!pattern.test(css)) failures.push(`Accessibility baseline missing: ${label}`);
+}
+
 const nextConfig = fs.existsSync(path.join(root, 'next.config.ts')) ? read('next.config.ts') : '';
 for (const [label, pattern] of [
   ['nosniff', /X-Content-Type-Options/],
@@ -52,6 +64,30 @@ for (const [label, pattern] of [
 ]) {
   if (!pattern.test(nextConfig)) failures.push(`Security baseline missing: ${label}`);
 }
+
+const sportsContracts = fs.existsSync(path.join(root, 'lib/sports/contracts.ts')) ? read('lib/sports/contracts.ts') : '';
+for (const [label, pattern] of [
+  ['source observations', /interface SourceObservation/],
+  ['verification state', /VerificationStatus/],
+  ['provider-neutral event model', /interface SportsEvent/],
+  ['conflict-aware reconciliation', /status: 'conflicted'/],
+]) {
+  if (!pattern.test(sportsContracts)) failures.push(`Sports trust layer missing: ${label}`);
+}
+
+const firewall = fs.existsSync(path.join(root, 'content-core/fact-firewall.js')) ? read('content-core/fact-firewall.js') : '';
+for (const [label, pattern] of [
+  ['research pack', /buildResearchPack/],
+  ['claim verification', /verifyResearchPack/],
+  ['unsupported claims', /unsupportedClaimIds/],
+  ['conflict detection', /detectConflicts/],
+]) {
+  if (!pattern.test(firewall)) failures.push(`Content trust layer missing: ${label}`);
+}
+
+const packageJson = fs.existsSync(path.join(root, 'package.json')) ? JSON.parse(read('package.json')) : {};
+if (!packageJson.scripts?.test) failures.push('Automated content tests are not exposed through package.json');
+if (!packageJson.scripts?.['test:sports']) failures.push('Automated sports trust tests are not exposed through package.json');
 
 const sitemap = fs.existsSync(path.join(root, 'app/sitemap.ts')) ? read('app/sitemap.ts') : '';
 for (const route of ['/sports', '/catalogue', '/teams', '/fixtures', '/live', '/news', '/about', '/contact', '/privacy', '/terms', '/shop']) {
@@ -74,8 +110,6 @@ function walk(dir) {
 }
 sourceRoots.forEach((dir) => walk(path.join(root, dir)));
 
-const routeFiles = [];
-walk(path.join(root, 'app'));
 for (const file of files) {
   const source = fs.readFileSync(file, 'utf8');
   const linkPattern = /(?:href|src)=["'](\/[A-Za-z0-9._~!$&'()*+,;=:@%\/-]+)(?:[?#][^"']*)?["']/g;
