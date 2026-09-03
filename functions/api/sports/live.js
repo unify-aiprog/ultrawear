@@ -43,7 +43,7 @@ export async function onRequestGet(context) {
   try {
     const registry = createRegistry(context.env);
     if (!registry.list().length) {
-      return json({ observedAt, count: 0, sports: [], verified: false, events: [], providers: [], error: 'No live sports provider is configured' }, 503, 'no-store');
+      return json({ observedAt, count: 0, sports: [], verified: false, events: [], providers: [], error: 'No live sports provider is configured' }, 200, 'no-store');
     }
     const feeds = await registry.fetchAll({ observedAt });
     const requestedSport = new URL(context.request.url).searchParams.get('sport')?.trim().toLowerCase() || null;
