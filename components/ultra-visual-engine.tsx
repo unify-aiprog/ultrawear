@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LiquidMetal, ShaderGradient, ShaderGradientCanvas } from '@paper-design/shaders-react';
+import { LiquidMetal } from '@paper-design/shaders-react';
+import { ShaderGradient, ShaderGradientCanvas } from '@shadergradient/react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Color, Mesh } from 'three';
 import { mountGlass } from '@liquidglassjs/core';
