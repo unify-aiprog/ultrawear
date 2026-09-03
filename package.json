@@ -10,6 +10,7 @@
     "test": "node --test content-core/*.test.js",
     "test:sports": "node --test --experimental-strip-types lib/sports/*.test.ts",
     "test:platform": "node --test --experimental-strip-types lib/platform-contracts.test.ts",
+    "test:browser": "playwright test",
     "constitution:check": "node scripts/constitution-check.mjs"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
