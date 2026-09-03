@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createObservation, reconcile } from './contracts';
 
@@ -25,7 +25,7 @@ describe('sports contracts', () => {
     ];
 
     const result = reconcile(observations, (a, b) => a.score === b.score);
-    expect(result.status).toBe('conflicted');
+    assert.equal(result.status, 'conflicted');
     assert.equal(result.value, null);
     assert.deepEqual(result.conflicts, ['b']);
   });
@@ -33,7 +33,7 @@ describe('sports contracts', () => {
   it('returns no value when every observation is stale', () => {
     const observation = createObservation({ id: 'stale', sourceId: 'feed', sourceType: 'secondary', observedAt: '2026-09-01T10:00:00Z', verification: 'stale', confidence: 1, payload: { score: '2-1' } });
     const result = reconcile([observation], () => true);
-    expect(result.status).toBe('insufficient_evidence');
+    assert.equal(result.status, 'insufficient_evidence');
     assert.equal(result.value, null);
   });
 });
