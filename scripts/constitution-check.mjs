@@ -6,8 +6,9 @@ const failures = [];
 const requiredFiles = [
   'docs/WEB_CONSTITUTION.md','README.md','app/layout.tsx','app/error.tsx','app/sitemap.ts','app/robots.ts','next.config.ts',
   'content-core/contracts.js','content-core/fact-firewall.js','content-core/pipeline.js','content-core/store.js','content-core/editorial-service.js',
-  'lib/sports/contracts.ts','lib/sports/persistence.ts','lib/trends/contracts.ts','lib/trends/store.ts','lib/privacy/consent.ts','lib/community/moderation.ts','lib/commerce/editorial-separation.ts',
-  'supabase/constitutional-platform.sql',
+  'lib/sports/contracts.ts','lib/sports/persistence.ts','lib/ingest/revalidation.ts','app/api/cron/sports/revalidate/route.ts',
+  'lib/trends/contracts.ts','lib/trends/store.ts','lib/privacy/consent.ts','lib/community/moderation.ts','lib/commerce/editorial-separation.ts',
+  'supabase/constitutional-platform.sql', '.github/workflows/sports-revalidation.yml',
 ];
 for (const file of requiredFiles) if (!fs.existsSync(path.join(root, file))) failures.push(`Missing constitutional foundation file: ${file}`);
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -24,6 +25,8 @@ const nextConfig = fs.existsSync(path.join(root, 'next.config.ts')) ? read('next
 for (const [label, pattern] of [['nosniff',/X-Content-Type-Options/],['referrer policy',/Referrer-Policy/],['frame protection',/X-Frame-Options/],['permissions policy',/Permissions-Policy/]]) if (!pattern.test(nextConfig)) failures.push(`Security baseline missing: ${label}`);
 const sports = read('lib/sports/contracts.ts');
 for (const [label, pattern] of [['source observations',/interface SourceObservation/],['verification state',/VerificationStatus/],['provider-neutral event model',/interface SportsEvent/],['source priority',/SOURCE_PRIORITY/],['conflict-aware reconciliation',/status: conflicts.length \? 'conflicted'/]]) if (!pattern.test(sports)) failures.push(`Sports trust layer missing: ${label}`);
+const revalidation = read('lib/ingest/revalidation.ts');
+for (const [label, pattern] of [['provider adapter',/SportsProviderAdapter/],['persistent observations',/sports_source_observations/],['reconciliation run',/sports_reconciliation_runs/],['freshness window',/freshnessAt/]]) if (!pattern.test(revalidation)) failures.push(`Sports revalidation layer missing: ${label}`);
 const firewall = read('content-core/fact-firewall.js');
 for (const [label, pattern] of [['research pack',/buildResearchPack/],['claim verification',/verifyResearchPack/],['unsupported claims',/unsupportedClaimIds/],['conflict detection',/detectConflicts/]]) if (!pattern.test(firewall)) failures.push(`Content trust layer missing: ${label}`);
 const editorial = read('content-core/editorial-service.js');
@@ -35,7 +38,7 @@ for (const [label, pattern] of [['moderation states',/ModerationStatus/],['moder
 const commerce = read('lib/commerce/editorial-separation.ts');
 if (!/CommercialLabel/.test(commerce) || !/editorialIndependence/.test(commerce)) failures.push('Commercial/editorial separation missing');
 const packageJson = fs.existsSync(path.join(root, 'package.json')) ? JSON.parse(read('package.json')) : {};
-for (const script of ['test','test:sports']) if (!packageJson.scripts?.[script]) failures.push(`Automated test script missing: ${script}`);
+for (const script of ['test','test:sports','test:platform']) if (!packageJson.scripts?.[script]) failures.push(`Automated test script missing: ${script}`);
 const schema = read('supabase/constitutional-platform.sql');
 for (const table of ['sports_source_observations','sports_reconciliation_runs','content_stories','content_audit_log','content_claims','trend_signals','editorial_opportunities']) if (!schema.includes(`create table if not exists ${table}`)) failures.push(`Persistence schema missing: ${table}`);
 const sitemap = read('app/sitemap.ts');
