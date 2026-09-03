@@ -26,6 +26,8 @@ jobs:
         run: npm run test:sports
       - name: Platform trust tests
         run: npm run test:platform
+      - name: Privacy consent tests
+        run: node --test --experimental-strip-types lib/privacy/*.test.ts
       - name: Type check
         run: npm run check
       - name: Production build
