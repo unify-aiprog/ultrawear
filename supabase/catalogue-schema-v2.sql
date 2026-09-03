@@ -89,7 +89,7 @@ create table if not exists teams_v2 (
 create table if not exists team_competitions (
   team_id text not null references teams_v2(id) on delete cascade,
   competition_id text not null references competitions_v2(id) on delete cascade,
-  season_id text references seasons(id) on delete cascade,
+  season_id text not null references seasons(id) on delete cascade,
   role text not null default 'participant',
   created_at timestamptz not null default now(),
   primary key (team_id, competition_id, season_id)
@@ -113,7 +113,7 @@ create table if not exists persons_v2 (
 create table if not exists team_memberships (
   team_id text not null references teams_v2(id) on delete cascade,
   person_id text not null references persons_v2(id) on delete cascade,
-  season_id text references seasons(id) on delete set null,
+  season_id text not null references seasons(id) on delete set null,
   role text not null default 'player',
   shirt_number integer,
   position text,
@@ -155,6 +155,14 @@ create table if not exists events_v2 (
   updated_at timestamptz not null default now()
 );
 
+create unique index if not exists competitions_v2_provider_uidx on competitions_v2(provider, provider_id) where provider is not null and provider_id is not null;
+create unique index if not exists seasons_provider_uidx on seasons(provider, provider_id) where provider is not null and provider_id is not null;
+create unique index if not exists organizations_provider_uidx on organizations(provider, provider_id) where provider is not null and provider_id is not null;
+create unique index if not exists teams_v2_provider_uidx on teams_v2(provider, provider_id) where provider is not null and provider_id is not null;
+create unique index if not exists persons_v2_provider_uidx on persons_v2(provider, provider_id) where provider is not null and provider_id is not null;
+create unique index if not exists venues_provider_uidx on venues(provider, provider_id) where provider is not null and provider_id is not null;
+create unique index if not exists events_v2_provider_uidx on events_v2(provider, provider_id) where provider is not null and provider_id is not null;
+
 create index if not exists competitions_v2_sport_country_idx on competitions_v2(sport_id, country_id);
 create index if not exists competitions_v2_type_idx on competitions_v2(competition_type, gender, age_group);
 create index if not exists seasons_competition_current_idx on seasons(competition_id, current);
@@ -164,12 +172,13 @@ create index if not exists teams_v2_type_idx on teams_v2(team_type, gender, age_
 create index if not exists team_competitions_competition_idx on team_competitions(competition_id, season_id);
 create index if not exists team_memberships_person_idx on team_memberships(person_id, season_id);
 create index if not exists events_v2_competition_starts_idx on events_v2(competition_id, starts_at desc);
+create index if not exists events_v2_status_starts_idx on events_v2(status, starts_at);
 create index if not exists events_v2_teams_starts_idx on events_v2(home_team_id, away_team_id, starts_at desc);
 
 insert into sports (id, name, slug, description)
 values
-  ('football', 'Football', 'football', 'Global football catalogue, competitions, teams, players and events.')
-  ,('basketball', 'Basketball', 'basketball', 'Basketball catalogue foundation.')
-  ,('tennis', 'Tennis', 'tennis', 'Tennis catalogue foundation.')
-  ,('running', 'Running', 'running', 'Running catalogue foundation.')
+  ('football', 'Football', 'football', 'Global football catalogue, competitions, teams, players and events.'),
+  ('basketball', 'Basketball', 'basketball', 'Basketball catalogue foundation.'),
+  ('tennis', 'Tennis', 'tennis', 'Tennis catalogue foundation.'),
+  ('running', 'Running', 'running', 'Running catalogue foundation.')
 on conflict (id) do update set name = excluded.name, description = excluded.description, updated_at = now();
