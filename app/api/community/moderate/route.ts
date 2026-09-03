@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseServerClient } from '@/lib/supabase';
+import { getSupabaseAdminClient, getSupabaseServerClient } from '@/lib/supabase';
 import { moderateAndSave } from '@/lib/community/store';
 import type { CommunitySubmission, ModerationStatus } from '@/lib/community/moderation';
 
 export const dynamic = 'force-dynamic';
-
 const MODERATOR_ROLES = new Set(['admin', 'moderator', 'editor']);
 
 export async function POST(request: Request) {
@@ -16,8 +15,15 @@ export async function POST(request: Request) {
   if (!MODERATOR_ROLES.has(role)) return NextResponse.json({ error: 'Moderator access required' }, { status: 403 });
   try {
     const body = await request.json();
-    if (!body?.submission || typeof body.to !== 'string') return NextResponse.json({ error: 'submission and target status are required' }, { status: 400 });
-    const result = await moderateAndSave(body.submission as CommunitySubmission, body.to as ModerationStatus, user.id, typeof body.reason === 'string' ? body.reason : '');
+    const id = typeof body?.submissionId === 'string' ? body.submissionId : '';
+    const to = typeof body?.to === 'string' ? body.to as ModerationStatus : null;
+    if (!id || !to) return NextResponse.json({ error: 'submissionId and target status are required' }, { status: 400 });
+    const admin = getSupabaseAdminClient();
+    if (!admin) return NextResponse.json({ error: 'Persistence service unavailable' }, { status: 503 });
+    const { data: row, error } = await admin.from('community_submissions').select('*').eq('id', id).single();
+    if (error || !row) return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+    const item: CommunitySubmission = { id: row.id, authorId: row.author_id, body: row.body, status: row.status, createdAt: row.created_at, moderatedAt: row.moderated_at ?? undefined, moderatorId: row.moderator_id ?? undefined, reason: row.reason ?? '' };
+    const result = await moderateAndSave(item, to, user.id, typeof body.reason === 'string' ? body.reason : '');
     return NextResponse.json({ ok: true, submission: result });
   } catch (error) {
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Moderation failed' }, { status: 422 });
