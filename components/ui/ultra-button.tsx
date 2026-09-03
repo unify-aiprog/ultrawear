@@ -3,7 +3,10 @@
 import { Button, type ButtonProps } from 'react-aria-components';
 import { motion } from 'motion/react';
 
-type MotionSafeButtonProps = Omit<ButtonProps, 'onDrag' | 'onDragStart' | 'onDragEnd'>;
+type MotionSafeButtonProps = Omit<
+  ButtonProps,
+  'onAnimationStart' | 'onAnimationEnd' | 'onAnimationIteration' | 'onDrag' | 'onDragStart' | 'onDragEnd'
+>;
 
 export function UltraButton(props: MotionSafeButtonProps) {
   const className = props.className ?? 'button button-dark';
@@ -13,7 +16,15 @@ export function UltraButton(props: MotionSafeButtonProps) {
       {...props}
       className={className}
       render={(domProps, { isPressed }) => {
-        const { onDrag, onDragStart, onDragEnd, ...motionProps } = domProps;
+        const {
+          onAnimationStart,
+          onAnimationEnd,
+          onAnimationIteration,
+          onDrag,
+          onDragStart,
+          onDragEnd,
+          ...motionProps
+        } = domProps;
 
         return (
           <motion.button
