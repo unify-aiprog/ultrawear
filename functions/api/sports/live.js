@@ -67,6 +67,6 @@ export async function onRequestGet(context) {
       providers,
     });
   } catch (error) {
-    return json({ observedAt, count: 0, sports: [], verified: false, events: [], error: error instanceof Error ? error.message : String(error) }, 502, 'no-store');
+    return json({ observedAt, count: 0, sports: [], verified: false, events: [], providers: [], error: error instanceof Error ? error.message : String(error) }, 200, 'no-store');
   }
 }
