@@ -17,6 +17,8 @@ jobs:
           set -euo pipefail
           test -n "$ULTRAWEAR_REVALIDATION_URL"
           test -n "$SPORTS_REVALIDATION_CRON_SECRET"
-          curl --fail --silent --show-error \
+          response="$(curl --fail --silent --show-error \
             -H "Authorization: Bearer $SPORTS_REVALIDATION_CRON_SECRET" \
-            "$ULTRAWEAR_REVALIDATION_URL/api/cron/sports/revalidate"
+            "$ULTRAWEAR_REVALIDATION_URL/api/cron/sports/revalidate")"
+          echo "$response"
+          echo "$response" | jq -e '.ok == true' >/dev/null
