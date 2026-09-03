@@ -33,6 +33,8 @@ const editorial = read('content-core/editorial-service.js');
 for (const [label, pattern] of [['review gate',/verified research pack is required/],['atomic persistence',/transitionStoryAtomically/],['pipeline transition',/transitionStory/]]) if (!pattern.test(editorial)) failures.push(`Editorial workflow missing: ${label}`);
 const privacy = read('lib/privacy/consent.ts');
 for (const [label, pattern] of [['purpose consent',/ConsentPurpose/],['consent enforcement',/canTrack/],['coarse location',/coarseLocation/]]) if (!pattern.test(privacy)) failures.push(`Privacy layer missing: ${label}`);
+const trends = read('lib/trends/store.ts');
+for (const [label, pattern] of [['trend consent import',/canTrack/],['personalized trend gate',/Personalization consent is required/]]) if (!pattern.test(trends)) failures.push(`Trend privacy gate missing: ${label}`);
 const moderation = read('lib/community/moderation.ts');
 for (const [label, pattern] of [['moderation states',/ModerationStatus/],['moderation transition',/canModerate/]]) if (!pattern.test(moderation)) failures.push(`Community governance missing: ${label}`);
 const commerce = read('lib/commerce/editorial-separation.ts');
@@ -41,7 +43,7 @@ const packageJson = fs.existsSync(path.join(root, 'package.json')) ? JSON.parse(
 for (const script of ['test','test:sports','test:platform']) if (!packageJson.scripts?.[script]) failures.push(`Automated test script missing: ${script}`);
 const schema = read('supabase/constitutional-platform.sql');
 for (const table of ['sports_source_observations','sports_reconciliation_runs','content_stories','content_audit_log','content_claims','trend_signals','editorial_opportunities']) if (!schema.includes(`create table if not exists ${table}`)) failures.push(`Persistence schema missing: ${table}`);
-for (const [label, pattern] of [['atomic editorial RPC',/create or replace function transition_content_story/],['RPC restricted to service role',/grant execute on function transition_content_story[^;]*to service_role/i],['community RPC restricted',/grant execute on function moderate_community_submission[^;]*to service_role/i]]) if (!pattern.test(schema)) failures.push(`Persistence security missing: ${label}`);
+for (const [label, pattern] of [['atomic editorial RPC',/create or replace function transition_content_story/],['RPC restricted to service role',/grant execute on function transition_content_story[^;]*to service_role/i],['community RPC restricted',/grant execute on function moderate_community_submission[^;]*to service_role/i],['entity-scoped observation uniqueness',/sports_source_observations\(source_id, entity_type, entity_id, content_hash\)/]]) if (!pattern.test(schema)) failures.push(`Persistence security missing: ${label}`);
 const sitemap = read('app/sitemap.ts');
 for (const route of ['/sports','/catalogue','/teams','/fixtures','/live','/news','/about','/contact','/privacy','/terms']) if (!sitemap.includes(`'${route}'`)) failures.push(`Sitemap missing constitutional primary route: ${route}`);
 
