@@ -22,6 +22,8 @@ jobs:
         run: npm test
       - name: Sports trust tests
         run: npm run test:sports
+      - name: Platform trust tests
+        run: npm run test:platform
       - name: Type check
         run: npm run check
       - name: Production build
