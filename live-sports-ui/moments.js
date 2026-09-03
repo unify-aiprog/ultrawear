@@ -23,6 +23,7 @@ const MOMENT_META = Object.freeze({
 });
 
 export function normalizeMoment(input = {}) {
+  if (!input || typeof input !== 'object') return null;
   const type = String(input.type ?? '').trim().toLowerCase();
   const meta = MOMENT_META[type];
   if (!meta) return null;
