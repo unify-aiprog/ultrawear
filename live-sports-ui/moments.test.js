@@ -16,6 +16,8 @@ assert.equal(overtake.label, 'OVERTAKE');
 assert.equal(momentClass(overtake), 'moment-overtake');
 
 assert.equal(normalizeMoment({ type: 'made_up_event' }), null);
+assert.equal(normalizeMoment(null), null);
+assert.equal(normalizeMoment(undefined), null);
 assert.equal(momentClass(null), '');
 
 console.log('live-sports moments tests passed');
