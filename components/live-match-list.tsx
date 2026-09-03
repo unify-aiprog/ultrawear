@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { articles } from '@/lib/editorial';
 
 type LiveEvent = {
   id: string;
@@ -46,7 +48,28 @@ export function LiveMatchList({ initialEvents }: { initialEvents: LiveEvent[] })
   }, []);
 
   if (!events.length) {
-    return <div className="empty-state"><strong>{feedUnavailable ? 'Live feed temporarily unavailable.' : 'No matches live right now.'}</strong><span>{feedUnavailable ? 'We are retrying automatically. No demo or stale scores are shown.' : 'Live fixtures appear automatically when the verified feed reports a match in play.'}</span></div>;
+    const latest = articles.slice(0, 3);
+    return (
+      <div className="live-empty-with-news">
+        <div className="empty-state">
+          <strong>{feedUnavailable ? 'No verified live match right now.' : 'No match is live right now.'}</strong>
+          <span>{feedUnavailable ? 'The verified score feed is being retried automatically.' : 'Instead of showing a dead end, catch up on the latest UltraWear FC stories.'}</span>
+        </div>
+        <section className="detail-section" aria-labelledby="latest-news-title">
+          <div className="section-heading"><span>NEWS</span><h2 id="latest-news-title">LATEST.</h2></div>
+          <div className="index-grid">
+            {latest.map((article) => (
+              <Link className="index-card" href={`/news/${article.slug}`} key={article.slug}>
+                <div className="news-card-image" style={{ backgroundImage: `url(/assets/${article.slug === 'the-game-is-bigger-than-the-score' ? 'news-community.svg' : article.slug === 'built-by-fans-made-for-everyone' ? 'news-matchday.svg' : 'news-sport-world.svg'})` }} aria-hidden="true" />
+                <span>{article.category} · {article.date}</span>
+                <b>{article.title}</b>
+                <small>{article.dek}</small>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </div>
+    );
   }
 
   return (
