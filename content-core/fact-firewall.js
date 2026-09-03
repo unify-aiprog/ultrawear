@@ -14,20 +14,23 @@ export function buildResearchPack({ opportunity, evidence = [], claims = [], ope
 
 export function verifyResearchPack(pack, options = {}) {
   const minimumConfidence = clampScore(options.minimumConfidence ?? 0.6);
-  const evidenceBySource = new Set((pack.evidence || []).map((item) => item.sourceId));
-  const results = (pack.claims || []).map((claim) => {
+  const evidence = Array.isArray(pack?.evidence) ? pack.evidence : [];
+  const claims = Array.isArray(pack?.claims) ? pack.claims : [];
+  const evidenceBySource = new Set(evidence.map((item) => item.sourceId));
+  const results = claims.map((claim) => {
     const supporting = (claim.evidenceIds || []).filter((id) => evidenceBySource.has(id));
-    const evidence = (pack.evidence || []).filter((item) => supporting.includes(item.sourceId));
-    const maxConfidence = evidence.reduce((max, item) => Math.max(max, item.confidence), 0);
+    const supportingEvidence = evidence.filter((item) => supporting.includes(item.sourceId));
+    const maxConfidence = supportingEvidence.reduce((max, item) => Math.max(max, item.confidence), 0);
     return { claimId: claim.id, supported: supporting.length > 0, confidence: maxConfidence };
   });
 
   const unsupported = results.filter((result) => !result.supported);
   const lowConfidence = results.filter((result) => result.supported && result.confidence < minimumConfidence);
-  const conflicting = detectConflicts(pack);
+  const conflicting = detectConflicts({ ...pack, evidence, claims });
+  const missingPack = !pack || !pack.opportunityId || evidence.length === 0 || claims.length === 0;
 
   return {
-    status: conflicting.length || unsupported.length || lowConfidence.length ? 'needs_review' : 'pass',
+    status: missingPack || conflicting.length || unsupported.length || lowConfidence.length ? 'needs_review' : 'pass',
     results,
     unsupportedClaimIds: unsupported.map((item) => item.claimId),
     lowConfidenceClaimIds: lowConfidence.map((item) => item.claimId),
@@ -42,6 +45,7 @@ function normalizeClaim(claim) {
     id: String(claim.id),
     text: String(claim.text).trim(),
     evidenceIds: [...new Set((claim.evidenceIds || []).map(String))],
+    contradictedBy: [...new Set((claim.contradictedBy || []).map(String))],
   };
 }
 
