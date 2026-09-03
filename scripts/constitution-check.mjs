@@ -44,10 +44,10 @@ for (const [label, pattern] of [['server-side roles',/trusted administrator or s
 const commerce = read('lib/commerce/editorial-separation.ts');
 if (!/CommercialLabel/.test(commerce) || !/editorialIndependence/.test(commerce)) failures.push('Commercial/editorial separation missing');
 const packageJson = fs.existsSync(path.join(root, 'package.json')) ? JSON.parse(read('package.json')) : {};
-for (const script of ['test','test:sports','test:platform','test:browser']) if (!packageJson.scripts?.[script]) failures.push(`Automated test script missing: ${script}`);
+for (const script of ['test','test:sports','test:platform','test:privacy','test:browser']) if (!packageJson.scripts?.[script]) failures.push(`Automated test script missing: ${script}`);
 if (!packageJson.devDependencies?.['@playwright/test']) failures.push('Browser test dependency missing: @playwright/test');
 const browserConfig = read('playwright.config.ts');
-for (const [label, pattern] of [['browser test directory',/testDir: '\.\/tests\/e2e'/],['base URL',/baseURL: 'http:\/\/127\.0\.0\.1:3000'/],['web server',/command: 'npm run dev/]]) if (!pattern.test(browserConfig)) failures.push(`Browser test configuration missing: ${label}`);
+for (const [label, pattern] of [['browser test directory',/testDir: '\.\/tests\/e2e'/],['base URL',/baseURL: 'http:\/\/127\.0\.0\.1:3000'/],['production web server',/command: 'npm run start/]]) if (!pattern.test(browserConfig)) failures.push(`Browser test configuration missing: ${label}`);
 const schema = read('supabase/constitutional-platform.sql');
 for (const table of ['sports_source_observations','sports_reconciliation_runs','content_stories','content_audit_log','content_claims','trend_signals','editorial_opportunities']) if (!schema.includes(`create table if not exists ${table}`)) failures.push(`Persistence schema missing: ${table}`);
 for (const [label, pattern] of [['atomic editorial RPC',/create or replace function transition_content_story/],['RPC restricted to service role',/grant execute on function transition_content_story[^;]*to service_role/i],['community RPC restricted',/grant execute on function moderate_community_submission[^;]*to service_role/i],['entity-scoped observation uniqueness',/sports_source_observations\(source_id, entity_type, entity_id, content_hash\)/]]) if (!pattern.test(schema)) failures.push(`Persistence security missing: ${label}`);
