@@ -1,0 +1,2 @@
+export const metadata = { title: 'About' };
+export default function AboutPage() { return <section className="section prose-page"><p className="eyebrow">THE IDEA</p><h1>FC MEANS<br /><em>FOR COMMUNITY.</em></h1><p>UltraWear FC is a sports and lifestyle brand rooted in football culture, built around the idea that sport is bigger than the score.</p><p>We launch with football. The long-term vision reaches across sports, culture and everyday life — always with community at the centre.</p></section>; }
