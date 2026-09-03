@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { AdSlot } from '@/components/ad-slot';
+import { UltraVisualEngine } from '@/components/ultra-visual-engine';
 import { WeekendAction, getWeekendActionEvents } from '@/components/weekend-action';
+import './visual-engine.css';
 
 export const revalidate = 120;
 
@@ -16,6 +18,8 @@ export default async function HomePage() {
       </div>
       <div className="hero-art" aria-hidden="true"><div className="orb" /><div className="ring ring-a" /><div className="ring ring-b" /><div className="hero-label">FC<br /><small>FOR COMMUNITY</small></div></div>
     </section>
+
+    <UltraVisualEngine />
 
     <div className="ticker" aria-label="UltraWear message">{['FOOTBALL','COMMUNITY','CULTURE','SPORTS','FORWARD'].map(item => <span key={item}>{item}</span>)}</div>
 
