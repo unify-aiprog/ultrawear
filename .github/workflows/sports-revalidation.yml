@@ -1,0 +1,22 @@
+name: UltraWear Sports Revalidation
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  revalidate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Revalidate sports data
+        env:
+          ULTRAWEAR_REVALIDATION_URL: ${{ secrets.ULTRAWEAR_REVALIDATION_URL }}
+          SPORTS_REVALIDATION_CRON_SECRET: ${{ secrets.SPORTS_REVALIDATION_CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          test -n "$ULTRAWEAR_REVALIDATION_URL"
+          test -n "$SPORTS_REVALIDATION_CRON_SECRET"
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $SPORTS_REVALIDATION_CRON_SECRET" \
+            "$ULTRAWEAR_REVALIDATION_URL/api/cron/sports/revalidate"
