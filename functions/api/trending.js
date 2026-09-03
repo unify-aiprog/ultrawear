@@ -9,15 +9,19 @@ function json(body, status = 200, cache = 'public, max-age=15, stale-while-reval
 
 export async function onRequestGet(context) {
   const namespace = context.env?.TRENDING_STORE;
-  if (!namespace) return json({ error: 'TRENDING_STORE binding is not configured' }, 503, 'no-store');
+  if (!namespace) return json({ items: [], configured: false }, 200, 'no-store');
   const url = new URL(context.request.url);
   const limit = Math.min(Math.max(Number.parseInt(url.searchParams.get('limit') || '5', 10) || 5, 1), 10);
-  return json({ items: await createTrendStore(namespace).list(limit) });
+  try {
+    return json({ items: await createTrendStore(namespace).list(limit), configured: true });
+  } catch {
+    return json({ items: [], configured: true, error: 'Trending store temporarily unavailable' }, 200, 'no-store');
+  }
 }
 
 export async function onRequestPost(context) {
   const namespace = context.env?.TRENDING_STORE;
-  if (!namespace) return json({ error: 'TRENDING_STORE binding is not configured' }, 503, 'no-store');
+  if (!namespace) return json({ ok: false, configured: false }, 202, 'no-store');
 
   let body;
   try { body = await context.request.json(); } catch { return json({ error: 'Invalid JSON body' }, 400, 'no-store'); }
@@ -26,6 +30,10 @@ export async function onRequestPost(context) {
 
   const entityType = typeof body?.entityType === 'string' ? body.entityType.trim().slice(0, 40) : 'entity';
   const label = typeof body?.label === 'string' ? body.label.trim().slice(0, 160) : entityId;
-  const item = await createTrendStore(namespace).record({ entityId, entityType, label });
-  return json({ ok: true, item }, 202, 'no-store');
+  try {
+    const item = await createTrendStore(namespace).record({ entityId, entityType, label });
+    return json({ ok: true, item }, 202, 'no-store');
+  } catch {
+    return json({ ok: false, configured: true }, 202, 'no-store');
+  }
 }
