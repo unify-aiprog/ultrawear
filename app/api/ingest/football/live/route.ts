@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ingestFootballLive } from '@/lib/ingest/football-live';
+import { FootballDataError } from '@/lib/providers/football-data';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,7 +15,11 @@ export async function POST(request: NextRequest) {
     const result = await ingestFootballLive();
     return NextResponse.json({ ok: true, result });
   } catch (error) {
+    if (error instanceof FootballDataError) {
+      const status = error.status === 429 ? 429 : error.retryable ? 503 : 502;
+      return NextResponse.json({ ok: false, error: error.message, retryable: error.retryable }, { status });
+    }
     const message = error instanceof Error ? error.message : 'Live ingestion failed';
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    return NextResponse.json({ ok: false, error: message, retryable: false }, { status: 500 });
   }
 }
