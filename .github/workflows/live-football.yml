@@ -1,0 +1,22 @@
+name: UltraWear live football sync
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  sync-live:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger live ingestion
+        env:
+          ULTRAWEAR_URL: ${{ secrets.ULTRAWEAR_URL }}
+          FOOTBALL_DATA_INGEST_SECRET: ${{ secrets.FOOTBALL_DATA_INGEST_SECRET }}
+        run: |
+          set -euo pipefail
+          test -n "$ULTRAWEAR_URL"
+          test -n "$FOOTBALL_DATA_INGEST_SECRET"
+          curl --fail-with-body --silent --show-error \
+            -X POST "$ULTRAWEAR_URL/api/ingest/football/live" \
+            -H "x-ingest-secret: $FOOTBALL_DATA_INGEST_SECRET"
