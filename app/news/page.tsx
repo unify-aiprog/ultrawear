@@ -1,0 +1,3 @@
+import Link from 'next/link';
+export const metadata = { title: 'News' };
+export default function NewsPage() { return <section className="section"><p className="eyebrow">THE FEED</p><h1 className="page-title">SPORT.<br /><em>UNFILTERED.</em></h1><p className="lede dark">Original sport, culture and community stories will live here.</p><div className="index-grid"><Link className="index-card" href="/news"><span>CULTURE</span><b>The game is bigger than the score.</b><small>Editorial · Coming in launch content pass</small></Link><Link className="index-card" href="/news"><span>PEOPLE</span><b>Built by fans. Made for everyone.</b><small>Editorial · Coming in launch content pass</small></Link></div></section>; }
