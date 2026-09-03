@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import './globals.css';
+import '@liquidglassjs/core/css';
 import { SiteHeader } from '@/components/site-header';
 import { AdSlot } from '@/components/ad-slot';
 
