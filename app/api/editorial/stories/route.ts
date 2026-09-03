@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
 import { advanceStory } from '@/content-core/editorial-service';
 import { getStory, saveStory } from '@/content-core/store';
 import { getSupabaseServerClient } from '@/lib/supabase';
@@ -24,7 +25,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     if (body?.action === 'create') {
       if (!body.story || typeof body.story !== 'object') return NextResponse.json({ error: 'story is required' }, { status: 400 });
-      const storyInput = { ...body.story, state: 'opportunity', author: body.story.author ?? user.id, editor: user.id, publishedAt: null };
+      const storyInput = {
+        ...body.story,
+        id: randomUUID(),
+        state: 'opportunity',
+        author: user.id,
+        editor: user.id,
+        publishedAt: null,
+      };
       const story = await saveStory(storyInput);
       return NextResponse.json({ ok: true, story }, { status: 201 });
     }
