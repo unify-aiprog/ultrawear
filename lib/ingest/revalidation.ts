@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { getSupabaseServerClient } from '@/lib/supabase';
+import { getSupabaseAdminClient } from '@/lib/supabase';
 import { listMatches, type FootballDataMatch } from '@/lib/providers/football-data';
 import { createObservation, reconcile, type SourceObservation } from '@/lib/sports/contracts';
 
@@ -21,6 +21,28 @@ export type RevalidationSummary = {
 };
 
 const hashPayload = (payload: unknown) => createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+
+function rowToObservation(row: {
+  id: string;
+  source_id: string;
+  source_type: SourceObservation['sourceType'];
+  observed_at: string;
+  freshness_at: string | null;
+  verification: SourceObservation['verification'];
+  confidence: number | string;
+  payload: unknown;
+}): SourceObservation {
+  return createObservation({
+    id: row.id,
+    sourceId: row.source_id,
+    sourceType: row.source_type,
+    observedAt: row.observed_at,
+    freshnessAt: row.freshness_at ?? undefined,
+    verification: row.verification,
+    confidence: Number(row.confidence),
+    payload: row.payload,
+  });
+}
 
 export const footballMatchAdapter: SportsProviderAdapter<FootballDataMatch> = {
   id: 'football-data.org',
@@ -47,8 +69,10 @@ export const footballMatchAdapter: SportsProviderAdapter<FootballDataMatch> = {
 };
 
 export async function revalidateSports<T>(adapter: SportsProviderAdapter<T>, options: { from?: Date; to?: Date; confidence?: number } = {}): Promise<RevalidationSummary> {
-  const supabase = getSupabaseServerClient();
-  if (!supabase) throw new Error('Supabase is not configured');
+  // Revalidation is a trusted server job. Never use the anon client for writes;
+  // keep RLS enabled and use the service-role client only on the server.
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) throw new Error('Supabase service role is not configured');
 
   const from = (options.from ?? new Date(Date.now() - 2 * 86_400_000)).toISOString().slice(0, 10);
   const to = (options.to ?? new Date(Date.now() + 2 * 86_400_000)).toISOString().slice(0, 10);
@@ -70,17 +94,18 @@ export async function revalidateSports<T>(adapter: SportsProviderAdapter<T>, opt
         payload: normalized.payload,
       });
 
-      const { data: prior } = await supabase
+      const { data: prior, error: priorError } = await supabase
         .from('sports_source_observations')
         .select('id,source_id,source_type,observed_at,freshness_at,verification,confidence,payload')
         .eq('entity_type', normalized.entityType)
         .eq('entity_id', normalized.entityId)
         .order('observed_at', { ascending: false })
         .limit(20);
+      if (priorError) throw priorError;
 
-      const observations = [...(prior ?? []).map((row) => row as SourceObservation), observation];
+      const observations = [...(prior ?? []).map(rowToObservation), observation];
       const result = reconcile(observations, (a, b) => JSON.stringify(a) === JSON.stringify(b));
-      const { error } = await supabase.from('sports_source_observations').upsert({
+      const { error: observationError } = await supabase.from('sports_source_observations').upsert({
         id: observation.id,
         source_id: observation.sourceId,
         source_type: observation.sourceType,
@@ -93,9 +118,9 @@ export async function revalidateSports<T>(adapter: SportsProviderAdapter<T>, opt
         payload: observation.payload,
         content_hash: hashPayload(observation.payload),
       }, { onConflict: 'id' });
-      if (error) throw error;
+      if (observationError) throw observationError;
 
-      await supabase.from('sports_reconciliation_runs').insert({
+      const { error: historyError } = await supabase.from('sports_reconciliation_runs').insert({
         entity_type: normalized.entityType,
         entity_id: normalized.entityId,
         status: result.status,
@@ -103,6 +128,7 @@ export async function revalidateSports<T>(adapter: SportsProviderAdapter<T>, opt
         observation_ids: result.observationIds,
         conflict_ids: result.conflicts,
       });
+      if (historyError) throw historyError;
 
       summary.persisted += 1;
       if (result.status === 'verified') summary.verified += 1;
