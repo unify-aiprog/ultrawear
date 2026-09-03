@@ -4,8 +4,32 @@ import { createObservation, reconcile, type ReconciliationResult, type SourceObs
 
 type EntityKey = { entityType: string; entityId: string };
 
+type ObservationRow = {
+  id: string;
+  source_id: string;
+  source_type: SourceObservation['sourceType'];
+  observed_at: string;
+  freshness_at: string | null;
+  verification: SourceObservation['verification'];
+  confidence: number | string;
+  payload: unknown;
+};
+
 export function observationHash(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+}
+
+function rowToObservation(row: ObservationRow): SourceObservation {
+  return createObservation({
+    id: row.id,
+    sourceId: row.source_id,
+    sourceType: row.source_type,
+    observedAt: row.observed_at,
+    freshnessAt: row.freshness_at ?? undefined,
+    verification: row.verification,
+    confidence: Number(row.confidence),
+    payload: row.payload,
+  });
 }
 
 export async function persistObservation(key: EntityKey, input: Omit<SourceObservation, 'confidence'> & { confidence?: number }) {
@@ -39,18 +63,11 @@ export async function reconcilePersisted<T>(key: EntityKey, equals: (a: T, b: T)
     .order('observed_at', { ascending: false });
   if (error) throw new Error(`Unable to load sports observations: ${error.message}`);
 
-  const observations: SourceObservation[] = (data ?? []).map((row) => ({
-    id: row.id,
-    sourceId: row.source_id,
-    sourceType: row.source_type,
-    observedAt: row.observed_at,
-    freshnessAt: row.freshness_at ?? undefined,
-    verification: row.verification,
-    confidence: Number(row.confidence),
-    payload: row.payload,
-  }));
+  const observations = (data ?? []).map(rowToObservation);
   const result = reconcile(observations, equals);
-  const winner = result.value === null ? null : observations.find((item) => item.confidence === Math.max(...observations.filter((item) => item.verification !== 'stale').map((item) => item.confidence)))?.id ?? null;
+  const winner = result.value === null
+    ? null
+    : observations.find((item) => item.id === result.observationIds[0])?.id ?? null;
 
   const { error: historyError } = await supabase.from('sports_reconciliation_runs').insert({
     entity_type: key.entityType,
