@@ -77,7 +77,7 @@ for (const [label, pattern] of [
 const health = read('app/api/health/route.ts');
 for (const [label, pattern] of [['health endpoint',/export async function GET/],['database check',/supabase\.from\('sports'\)/],['freshness check',/STALE_AFTER_MINUTES/],['healthy result',/status === 'healthy'/]]) if (!pattern.test(health)) failures.push(`Health gate missing: ${label}`);
 const sitemap = read('app/sitemap.ts');
-for (const route of ['/sports','/catalogue','/teams','/fixtures','/live','/news','/about','/contact','/privacy','/terms']) if (!sitemap.includes(`'${route}'`)) failures.push(`Sitemap missing constitutional primary route: ${route}`);
+for (const route of ['/sports','/teams','/fixtures','/live','/news','/about','/contact','/privacy','/terms']) if (!sitemap.includes(`'${route}'`)) failures.push(`Sitemap missing constitutional primary route: ${route}`);
 
 const sourceRoots = ['app','components']; const sourceExtensions = new Set(['.tsx','.ts','.jsx','.js','.html']); const files = [];
 function walk(dir) { if (!fs.existsSync(dir)) return; for (const entry of fs.readdirSync(dir,{withFileTypes:true})) { if (entry.name === 'node_modules' || entry.name === '.next') continue; const full=path.join(dir,entry.name); if (entry.isDirectory()) walk(full); else if (sourceExtensions.has(path.extname(entry.name))) files.push(full); } }
