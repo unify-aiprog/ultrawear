@@ -9,6 +9,17 @@ const slugify = (value: string) => value.toLowerCase().normalize('NFKD').replace
 export type LiveEvent = { id: string; starts_at: string; status: string; home_score: number | null; away_score: number | null; competition: string; home_team: { name: string; crest_url: string | null }; away_team: { name: string; crest_url: string | null } };
 const LIVE_STATUSES = ['IN_PLAY', 'PAUSED'];
 
+type LiveRow = {
+  id: string;
+  starts_at: string;
+  status: string;
+  home_score: number | null;
+  away_score: number | null;
+  competition: { name: string } | { name: string }[] | null;
+  home_team: { name: string; crest_url: string | null } | { name: string; crest_url: string | null }[] | null;
+  away_team: { name: string; crest_url: string | null } | { name: string; crest_url: string | null }[] | null;
+};
+
 export async function ingestFootballLive() {
   const supabase = getSupabaseServerClient();
   if (!supabase) throw new Error('Supabase is not configured');
@@ -35,7 +46,7 @@ async function readLiveEvents(supabase: NonNullable<ReturnType<typeof getSupabas
     .select('id,starts_at,status,home_score,away_score,competition:competitions_v2(name),home_team:teams_v2!events_v2_home_team_id_fkey(name,crest_url),away_team:teams_v2!events_v2_away_team_id_fkey(name,crest_url)')
     .in('status', LIVE_STATUSES).order('starts_at', { ascending: true });
   if (error || !data) return [];
-  return data.map((row) => ({
+  return (data as unknown as LiveRow[]).map((row) => ({
     id: row.id, starts_at: row.starts_at, status: row.status, home_score: row.home_score, away_score: row.away_score,
     competition: Array.isArray(row.competition) ? row.competition[0]?.name ?? 'Football' : row.competition?.name ?? 'Football',
     home_team: Array.isArray(row.home_team) ? row.home_team[0] ?? { name: 'Home', crest_url: null } : row.home_team ?? { name: 'Home', crest_url: null },
