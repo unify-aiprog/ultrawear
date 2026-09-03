@@ -7,6 +7,24 @@ function db() {
   return client;
 }
 
+function rowToStory(row) {
+  return createStory({
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    canonicalSlug: row.canonical_slug,
+    summary: row.summary ?? '',
+    state: row.state,
+    signalIds: row.signal_ids ?? [],
+    entities: row.entities ?? [],
+    evidence: row.evidence ?? [],
+    author: row.author ?? null,
+    editor: row.editor ?? null,
+    publishedAt: row.published_at ?? null,
+    updatedAt: row.updated_at ?? null,
+  });
+}
+
 export async function saveStory(input) {
   const story = createStory(input);
   const { data, error } = await db().from('content_stories').upsert({
@@ -16,7 +34,14 @@ export async function saveStory(input) {
     published_at: story.publishedAt, updated_at: story.updatedAt ?? new Date().toISOString(),
   }, { onConflict: 'id' }).select('*').single();
   if (error || !data) throw new Error(`Unable to persist story: ${error?.message ?? 'unknown error'}`);
-  return story;
+  return rowToStory(data);
+}
+
+export async function getStory(id) {
+  if (!id) throw new Error('Story id is required');
+  const { data, error } = await db().from('content_stories').select('*').eq('id', id).maybeSingle();
+  if (error) throw new Error(`Unable to load story: ${error.message}`);
+  return data ? rowToStory(data) : null;
 }
 
 export async function appendStoryAudit({ storyId, action, actor, reason = '', fromState = null, toState = null, metadata = {} }) {
