@@ -30,20 +30,8 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Constitution gate
-        run: npm run constitution:check
-
-      - name: Type check
-        run: npm run check
-
-      - name: Code quality
-        run: npm run lint
-
-      - name: Production build
-        run: npm run build
-
-      - name: Browser, responsive and accessibility gates
-        run: npm run test:e2e
+      - name: Full repository readiness gate
+        run: npm run test:weekend
 
       - name: Optional production smoke test
         if: env.ULTRAWEAR_SMOKE_URL != ''
