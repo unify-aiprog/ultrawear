@@ -1,4 +1,5 @@
 import { DEMO_MATCHES } from './demo-data.js';
+import { renderLatestNews } from './latest-news.js';
 import { renderMatchFeed } from './render.js';
 
 function shortName(value) {
@@ -53,6 +54,10 @@ function renderFeedStatus(container, message) {
   container.innerHTML = `<div class="live-feed-status" role="status"><span>${message}</span></div>`;
 }
 
+function renderNoLiveState(container) {
+  renderLatestNews(container);
+}
+
 async function getEvents() {
   const url = `/api/sports/live?refresh=${Date.now()}`;
   const response = await fetch(url, {
@@ -83,22 +88,22 @@ export function createLiveFeedController(container) {
         if (verified && events.length) {
           renderMatchFeed(container, events.map(toCard));
           knownMomentKeys = animateNewMoments(container, knownMomentKeys);
-          return { verified: true, count: events.length };
+          return { verified: true, count: events.length, mode: 'live' };
         }
         if (isLocalPreview()) {
           renderMatchFeed(container, DEMO_MATCHES);
-        } else {
-          renderFeedStatus(container, 'No verified live events right now.');
+          return { verified: false, count: 0, mode: 'demo' };
         }
+        renderNoLiveState(container);
       } catch {
         if (isLocalPreview()) {
           renderMatchFeed(container, DEMO_MATCHES);
-        } else {
-          renderFeedStatus(container, 'Live sports feed temporarily unavailable.');
+          return { verified: false, count: 0, mode: 'demo' };
         }
+        renderNoLiveState(container);
       }
       knownMomentKeys = new Set();
-      return { verified: false, count: 0 };
+      return { verified: false, count: 0, mode: 'news' };
     },
   });
 }
@@ -114,22 +119,22 @@ export function createLiveSpotlightController(container) {
         if (verified && events.length) {
           renderMatchFeed(container, [toCard(events[0])]);
           knownMomentKeys = animateNewMoments(container, knownMomentKeys);
-          return { verified: true, count: 1, sport: events[0].sport };
+          return { verified: true, count: 1, sport: events[0].sport, mode: 'live' };
         }
         if (isLocalPreview()) {
           renderMatchFeed(container, DEMO_MATCHES.slice(0, 1));
-        } else {
-          renderFeedStatus(container, 'No verified live event right now.');
+          return { verified: false, count: 0, sport: DEMO_MATCHES[0]?.sport, mode: 'demo' };
         }
+        renderLatestNews(container, { compact: true });
       } catch {
         if (isLocalPreview()) {
           renderMatchFeed(container, DEMO_MATCHES.slice(0, 1));
-        } else {
-          renderFeedStatus(container, 'Live spotlight temporarily unavailable.');
+          return { verified: false, count: 0, sport: DEMO_MATCHES[0]?.sport, mode: 'demo' };
         }
+        renderLatestNews(container, { compact: true });
       }
       knownMomentKeys = new Set();
-      return { verified: false, count: 0, sport: isLocalPreview() ? DEMO_MATCHES[0]?.sport : undefined };
+      return { verified: false, count: 0, sport: undefined, mode: 'news' };
     },
   });
 }
