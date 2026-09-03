@@ -16,6 +16,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
       - name: Constitution gate
         run: npm run constitution:check
       - name: Content trust tests
@@ -28,3 +30,5 @@ jobs:
         run: npm run check
       - name: Production build
         run: npm run build
+      - name: Browser experience tests
+        run: npm run test:browser
