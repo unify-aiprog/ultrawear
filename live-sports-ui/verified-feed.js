@@ -46,7 +46,11 @@ function animateNewMoments(container, previousKeys) {
 }
 
 async function getEvents() {
-  const response = await fetch('/api/sports/live', { headers: { accept: 'application/json' } });
+  const url = `/api/sports/live?refresh=${Date.now()}`;
+  const response = await fetch(url, {
+    headers: { accept: 'application/json', 'cache-control': 'no-cache' },
+    cache: 'no-store',
+  });
   if (!response.ok) throw new Error(`Feed unavailable: ${response.status}`);
   const data = await response.json();
   return { events: Array.isArray(data?.events) ? data.events : [], verified: data?.verified === true };
