@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { ingestFootballLive } from '@/lib/ingest/football-live';
 import { FootballDataError } from '@/lib/providers/football-data';
 
