@@ -48,7 +48,9 @@ export function combineSportFeeds(feeds = []) {
 export function groupSportFeeds(events = []) {
   return events.reduce((groups, event) => {
     const key = String(event?.sport ?? 'Other').toLowerCase();
-    (groups[key] ??= []).push(event);
+    const group = groups[key] ?? [];
+    group.push(event);
+    groups[key] = group;
     return groups;
   }, {});
 }
