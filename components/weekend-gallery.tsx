@@ -52,47 +52,47 @@ export function WeekendGallery({ events }: { events: WeekendGalleryEvent[] }) {
         <div className="weekend-gallery__hint">MOVE / HOVER / EXPLORE</div>
       </div>
 
-      <div className="weekend-gallery__track" role="list" aria-label="Weekend sports events">
+      <ul className="weekend-gallery__track" aria-label="Weekend sports events">
         {cards.map((event, index) => {
           const home = event.home_team?.name ?? 'HOME';
           const away = event.away_team?.name ?? 'AWAY';
           const theme = visualThemes[index % visualThemes.length];
           const isActive = active === index;
           return (
-            <Link
-              className={`weekend-gallery__card weekend-gallery__card--${theme} ${isActive ? 'is-active' : ''}`}
-              href={`/matches/${event.id}`}
-              key={event.id}
-              role="listitem"
-              aria-label={`${home} versus ${away}`}
-              onFocus={() => setActive(index)}
-              onMouseEnter={() => setActive(index)}
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-                const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
-                e.currentTarget.style.setProperty('--mx', `${x.toFixed(2)}`);
-                e.currentTarget.style.setProperty('--my', `${y.toFixed(2)}`);
-              }}
-            >
-              <div className="weekend-gallery__art" aria-hidden="true"><span /><i /><b>{String(index + 1).padStart(2, '0')}</b></div>
-              <div className="weekend-gallery__meta">
-                <span>{formatDay(event.starts_at)}</span>
-                <span>{formatKickoff(event.starts_at)}</span>
-              </div>
-              <div className="weekend-gallery__match">
-                <small>{event.competitions_v2?.name ?? 'SPORT'}</small>
-                <strong>{home}</strong>
-                <strong>{away}</strong>
-              </div>
-              <div className="weekend-gallery__footer">
-                <span>{event.status ?? 'Scheduled'}</span>
-                <span>EXPLORE ↗</span>
-              </div>
-            </Link>
+            <li key={event.id} className="weekend-gallery__item">
+              <Link
+                className={`weekend-gallery__card weekend-gallery__card--${theme} ${isActive ? 'is-active' : ''}`}
+                href={`/matches/${event.id}`}
+                aria-label={`${home} versus ${away}`}
+                onFocus={() => setActive(index)}
+                onMouseEnter={() => setActive(index)}
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+                  const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+                  e.currentTarget.style.setProperty('--mx', `${x.toFixed(2)}`);
+                  e.currentTarget.style.setProperty('--my', `${y.toFixed(2)}`);
+                }}
+              >
+                <div className="weekend-gallery__art" aria-hidden="true"><span /><i /><b>{String(index + 1).padStart(2, '0')}</b></div>
+                <div className="weekend-gallery__meta">
+                  <span>{formatDay(event.starts_at)}</span>
+                  <span>{formatKickoff(event.starts_at)}</span>
+                </div>
+                <div className="weekend-gallery__match">
+                  <small>{event.competitions_v2?.name ?? 'SPORT'}</small>
+                  <strong>{home}</strong>
+                  <strong>{away}</strong>
+                </div>
+                <div className="weekend-gallery__footer">
+                  <span>{event.status ?? 'Scheduled'}</span>
+                  <span>EXPLORE ↗</span>
+                </div>
+              </Link>
+            </li>
           );
         })}
-      </div>
+      </ul>
 
       <div className="weekend-gallery__controls" aria-label="Gallery controls">
         {cards.map((event, index) => (

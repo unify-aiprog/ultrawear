@@ -6,7 +6,7 @@ import { observeMomentFeed } from './moment-engine.js';
 
 const app = document.querySelector('#event-app');
 const id = decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
-const esc = (v) => String(v ?? '').replace(/[&<>\"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' }[c]));
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function teamCode(team) { return team?.code || team?.shortName || team?.abbreviation || team?.id || ''; }
 function teamLabel(team) { return team?.name || teamCode(team); }

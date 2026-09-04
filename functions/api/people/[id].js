@@ -8,7 +8,7 @@ function jsonError(message, status) {
 
 function normalizeHistory(history, limit) {
   return history
-    .filter((item) => item && item.eventId)
+    .filter((item) => item?.eventId)
     .sort((a, b) => String(b.startsAt || '').localeCompare(String(a.startsAt || '')))
     .slice(0, limit);
 }
