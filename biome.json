@@ -1,8 +1,5 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
-  "files": {
-    "ignore": [".next", "node_modules", "playwright-report", "test-results"]
-  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
