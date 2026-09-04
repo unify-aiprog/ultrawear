@@ -8,27 +8,25 @@ export type LiveEvent = { id: string; starts_at: string; status: string; home_sc
 const LIVE_STATUSES = [EVENT_STATUSES.IN_PLAY, EVENT_STATUSES.PAUSED];
 const PROGRAMME_STATUSES = [EVENT_STATUSES.SCHEDULED, EVENT_STATUSES.TIMED, EVENT_STATUSES.IN_PLAY, EVENT_STATUSES.PAUSED, EVENT_STATUSES.FINISHED];
 
-type LiveRow = {
-  id: string; starts_at: string; status: string; home_score: number | null; away_score: number | null;
-  competition: { name: string } | { name: string }[] | null;
-  home_team: { name: string; crest_url: string | null } | { name: string; crest_url: string | null }[] | null;
-  away_team: { name: string; crest_url: string | null } | { name: string; crest_url: string | null }[] | null;
-};
+type LiveRow = { id: string; starts_at: string; status: string; home_score: number | null; away_score: number | null; competition: { name: string } | { name: string }[] | null; home_team: { name: string; crest_url: string | null } | { name: string; crest_url: string | null }[] | null; away_team: { name: string; crest_url: string | null } | { name: string; crest_url: string | null }[] | null };
 
 export async function ingestFootballLive() {
   const supabase = getSupabaseServerClient();
   if (!supabase) throw new Error('Supabase is not configured');
-  const { matches: inPlay } = await listMatches({ status: EVENT_STATUSES.IN_PLAY });
-  const { matches: paused } = await listMatches({ status: EVENT_STATUSES.PAUSED });
-  const matches = dedupe([...inPlay, ...paused]);
+  const today = new Date();
+  const horizon = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const dateFrom = today.toISOString().slice(0, 10);
+  const dateTo = horizon.toISOString().slice(0, 10);
+  const [inPlayResult, pausedResult, windowResult] = await Promise.all([
+    listMatches({ status: EVENT_STATUSES.IN_PLAY }),
+    listMatches({ status: EVENT_STATUSES.PAUSED }),
+    listMatches({ dateFrom, dateTo }),
+  ]);
+  const matches = dedupe([...inPlayResult.matches, ...pausedResult.matches, ...windowResult.matches]);
   for (const match of matches) await upsertLiveMatch(supabase, match);
 
-  const { error: staleError } = await supabase.from('events_v2')
-    .update({ status: EVENT_STATUSES.FINISHED, updated_at: new Date().toISOString() })
-    .in('status', LIVE_STATUSES)
-    .lt('starts_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString());
+  const { error: staleError } = await supabase.from('events_v2').update({ status: EVENT_STATUSES.FINISHED, updated_at: new Date().toISOString() }).in('status', LIVE_STATUSES).lt('starts_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString());
   if (staleError) throw new Error(`Unable to reconcile stale live events: ${staleError.message}`);
-
   const events = await readEvents(supabase, LIVE_STATUSES);
   const cached = await cacheSet(LIVE_CACHE_KEY, events, 30);
   return { live: events.length, updated: matches.length, cached };
@@ -46,36 +44,20 @@ export async function getProgrammeEvents(): Promise<LiveEvent[]> {
   const supabase = getSupabaseServerClient();
   if (!supabase) return [];
   try {
-    const now = new Date().toISOString();
     const horizon = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { data, error } = await supabase.from('events_v2')
-      .select('id,starts_at,status,home_score,away_score,competition:competitions_v2(name),home_team:teams_v2!events_v2_home_team_id_fkey(name,crest_url),away_team:teams_v2!events_v2_away_team_id_fkey(name,crest_url)')
-      .in('status', PROGRAMME_STATUSES)
-      .gte('starts_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
-      .lte('starts_at', horizon)
-      .order('starts_at', { ascending: true }).limit(100);
+    const { data, error } = await supabase.from('events_v2').select('id,starts_at,status,home_score,away_score,competition:competitions_v2(name),home_team:teams_v2!events_v2_home_team_id_fkey(name,crest_url),away_team:teams_v2!events_v2_away_team_id_fkey(name,crest_url)').in('status', PROGRAMME_STATUSES).gte('starts_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()).lte('starts_at', horizon).order('starts_at', { ascending: true }).limit(100);
     if (error) throw error;
     return normalizeRows(data as unknown as LiveRow[] ?? []);
   } catch { return []; }
 }
 
 async function readEvents(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, statuses: string[]): Promise<LiveEvent[]> {
-  const { data, error } = await supabase.from('events_v2')
-    .select('id,starts_at,status,home_score,away_score,competition:competitions_v2(name),home_team:teams_v2!events_v2_home_team_id_fkey(name,crest_url),away_team:teams_v2!events_v2_away_team_id_fkey(name,crest_url)')
-    .in('status', statuses).order('starts_at', { ascending: true });
+  const { data, error } = await supabase.from('events_v2').select('id,starts_at,status,home_score,away_score,competition:competitions_v2(name),home_team:teams_v2!events_v2_home_team_id_fkey(name,crest_url),away_team:teams_v2!events_v2_away_team_id_fkey(name,crest_url)').in('status', statuses).order('starts_at', { ascending: true });
   if (error) throw new Error(`Unable to read live events: ${error.message}`);
   return normalizeRows(data as unknown as LiveRow[] ?? []);
 }
 
-function normalizeRows(rows: LiveRow[]): LiveEvent[] {
-  return rows.map((row) => ({
-    id: row.id, starts_at: row.starts_at, status: canonicalEventStatus(row.status) ?? EVENT_STATUSES.IN_PLAY,
-    home_score: row.home_score, away_score: row.away_score,
-    competition: Array.isArray(row.competition) ? row.competition[0]?.name ?? 'Football' : row.competition?.name ?? 'Football',
-    home_team: Array.isArray(row.home_team) ? row.home_team[0] ?? { name: 'Home', crest_url: null } : row.home_team ?? { name: 'Home', crest_url: null },
-    away_team: Array.isArray(row.away_team) ? row.away_team[0] ?? { name: 'Away', crest_url: null } : row.away_team ?? { name: 'Away', crest_url: null },
-  }));
-}
+function normalizeRows(rows: LiveRow[]): LiveEvent[] { return rows.map((row) => ({ id: row.id, starts_at: row.starts_at, status: canonicalEventStatus(row.status) ?? EVENT_STATUSES.IN_PLAY, home_score: row.home_score, away_score: row.away_score, competition: Array.isArray(row.competition) ? row.competition[0]?.name ?? 'Football' : row.competition?.name ?? 'Football', home_team: Array.isArray(row.home_team) ? row.home_team[0] ?? { name: 'Home', crest_url: null } : row.home_team ?? { name: 'Home', crest_url: null }, away_team: Array.isArray(row.away_team) ? row.away_team[0] ?? { name: 'Away', crest_url: null } : row.away_team ?? { name: 'Away', crest_url: null } })); }
 
 async function upsertLiveMatch(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, match: FootballDataMatch) {
   const competitionId = canonicalId('competition', PROVIDERS.FOOTBALL_DATA, match.competition.id);
@@ -88,10 +70,6 @@ async function upsertLiveMatch(supabase: NonNullable<ReturnType<typeof getSupaba
   const { error } = await supabase.from('events_v2').upsert({ id: canonicalId('event', PROVIDERS.FOOTBALL_DATA, match.id), sport_id: 'football', competition_id: competitionId, season_id: seasonId, home_team_id: homeTeamId, away_team_id: awayTeamId, starts_at: match.utcDate, status, home_score: match.score?.fullTime?.home ?? null, away_score: match.score?.fullTime?.away ?? null, round_name: match.stage ?? match.group ?? (match.matchday ? `Matchday ${match.matchday}` : null), provider: PROVIDERS.FOOTBALL_DATA, provider_id: String(match.id) }, { onConflict: 'id' });
   if (error) throw new Error(`Unable to upsert live match ${match.id}: ${error.message}`);
 }
-async function ensureTeam(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, providerId: number, name: string, crest?: string | null) {
-  const id = canonicalId('team', PROVIDERS.FOOTBALL_DATA, providerId);
-  const { data, error } = await supabase.from('teams_v2').upsert({ id, sport_id: 'football', name, slug: canonicalSlug(name, providerId), team_type: 'CLUB', gender: 'MEN', age_group: 'SENIOR', crest_url: crest ?? null, provider: PROVIDERS.FOOTBALL_DATA, provider_id: String(providerId) }, { onConflict: 'id' }).select('id').single();
-  if (error) throw new Error(`Unable to upsert team ${providerId}: ${error.message}`);
-  return data?.id ?? null;
-}
+
+async function ensureTeam(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, providerId: number, name: string, crest?: string | null) { const id = canonicalId('team', PROVIDERS.FOOTBALL_DATA, providerId); const { data, error } = await supabase.from('teams_v2').upsert({ id, sport_id: 'football', name, slug: canonicalSlug(name, providerId), team_type: 'CLUB', gender: 'MEN', age_group: 'SENIOR', crest_url: crest ?? null, provider: PROVIDERS.FOOTBALL_DATA, provider_id: String(providerId) }, { onConflict: 'id' }).select('id').single(); if (error) throw new Error(`Unable to upsert team ${providerId}: ${error.message}`); return data?.id ?? null; }
 function dedupe(matches: FootballDataMatch[]) { return [...new Map(matches.map((match) => [match.id, match])).values()]; }
