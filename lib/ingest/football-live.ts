@@ -6,13 +6,10 @@ import { canonicalEventStatus, canonicalId, canonicalSlug, EVENT_STATUSES, PROVI
 const LIVE_CACHE_KEY = 'ultrawear:football:live:v1';
 export type LiveEvent = { id: string; starts_at: string; status: string; home_score: number | null; away_score: number | null; competition: string; home_team: { name: string; crest_url: string | null }; away_team: { name: string; crest_url: string | null } };
 const LIVE_STATUSES = [EVENT_STATUSES.IN_PLAY, EVENT_STATUSES.PAUSED];
+const PROGRAMME_STATUSES = [EVENT_STATUSES.SCHEDULED, EVENT_STATUSES.TIMED, EVENT_STATUSES.IN_PLAY, EVENT_STATUSES.PAUSED, EVENT_STATUSES.FINISHED];
 
 type LiveRow = {
-  id: string;
-  starts_at: string;
-  status: string;
-  home_score: number | null;
-  away_score: number | null;
+  id: string; starts_at: string; status: string; home_score: number | null; away_score: number | null;
   competition: { name: string } | { name: string }[] | null;
   home_team: { name: string; crest_url: string | null } | { name: string; crest_url: string | null }[] | null;
   away_team: { name: string; crest_url: string | null } | { name: string; crest_url: string | null }[] | null;
@@ -32,8 +29,8 @@ export async function ingestFootballLive() {
     .lt('starts_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString());
   if (staleError) throw new Error(`Unable to reconcile stale live events: ${staleError.message}`);
 
-  const events = await readLiveEvents(supabase);
-  const cached = await cacheSet(LIVE_CACHE_KEY, events, 90);
+  const events = await readEvents(supabase, LIVE_STATUSES);
+  const cached = await cacheSet(LIVE_CACHE_KEY, events, 30);
   return { live: events.length, updated: matches.length, cached };
 }
 
@@ -42,21 +39,38 @@ export async function getLiveEvents(): Promise<LiveEvent[]> {
   if (cached !== null) return cached;
   const supabase = getSupabaseServerClient();
   if (!supabase) return [];
-  try {
-    return await readLiveEvents(supabase);
-  } catch {
-    return [];
-  }
+  try { return await readEvents(supabase, LIVE_STATUSES); } catch { return []; }
 }
 
-async function readLiveEvents(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>): Promise<LiveEvent[]> {
+export async function getProgrammeEvents(): Promise<LiveEvent[]> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return [];
+  try {
+    const now = new Date().toISOString();
+    const horizon = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase.from('events_v2')
+      .select('id,starts_at,status,home_score,away_score,competition:competitions_v2(name),home_team:teams_v2!events_v2_home_team_id_fkey(name,crest_url),away_team:teams_v2!events_v2_away_team_id_fkey(name,crest_url)')
+      .in('status', PROGRAMME_STATUSES)
+      .gte('starts_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
+      .lte('starts_at', horizon)
+      .order('starts_at', { ascending: true }).limit(100);
+    if (error) throw error;
+    return normalizeRows(data as unknown as LiveRow[] ?? []);
+  } catch { return []; }
+}
+
+async function readEvents(supabase: NonNullable<ReturnType<typeof getSupabaseServerClient>>, statuses: string[]): Promise<LiveEvent[]> {
   const { data, error } = await supabase.from('events_v2')
     .select('id,starts_at,status,home_score,away_score,competition:competitions_v2(name),home_team:teams_v2!events_v2_home_team_id_fkey(name,crest_url),away_team:teams_v2!events_v2_away_team_id_fkey(name,crest_url)')
-    .in('status', LIVE_STATUSES).order('starts_at', { ascending: true });
+    .in('status', statuses).order('starts_at', { ascending: true });
   if (error) throw new Error(`Unable to read live events: ${error.message}`);
-  if (!data) return [];
-  return (data as unknown as LiveRow[]).map((row) => ({
-    id: row.id, starts_at: row.starts_at, status: canonicalEventStatus(row.status) ?? EVENT_STATUSES.IN_PLAY, home_score: row.home_score, away_score: row.away_score,
+  return normalizeRows(data as unknown as LiveRow[] ?? []);
+}
+
+function normalizeRows(rows: LiveRow[]): LiveEvent[] {
+  return rows.map((row) => ({
+    id: row.id, starts_at: row.starts_at, status: canonicalEventStatus(row.status) ?? EVENT_STATUSES.IN_PLAY,
+    home_score: row.home_score, away_score: row.away_score,
     competition: Array.isArray(row.competition) ? row.competition[0]?.name ?? 'Football' : row.competition?.name ?? 'Football',
     home_team: Array.isArray(row.home_team) ? row.home_team[0] ?? { name: 'Home', crest_url: null } : row.home_team ?? { name: 'Home', crest_url: null },
     away_team: Array.isArray(row.away_team) ? row.away_team[0] ?? { name: 'Away', crest_url: null } : row.away_team ?? { name: 'Away', crest_url: null },
