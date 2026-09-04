@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { AdSlot } from '@/components/ad-slot';
 import { UltraVisualEngine } from '@/components/ultra-visual-engine';
-import { WeekendAction, getWeekendActionEvents } from '@/components/weekend-action';
+import { WeekendGallery } from '@/components/weekend-gallery';
+import { getWeekendActionEvents } from '@/components/weekend-action';
 import './visual-engine.css';
 
 export const revalidate = 120;
@@ -23,7 +24,7 @@ export default async function HomePage() {
 
     <div className="ticker" aria-label="UltraWear message">{['FOOTBALL','COMMUNITY','CULTURE','SPORTS','FORWARD'].map(item => <span key={item}>{item}</span>)}</div>
 
-    <WeekendAction events={weekendEvents} />
+    <WeekendGallery events={weekendEvents} />
 
     <section className="section" aria-labelledby="sports-heading">
       <div className="section-head"><div><p className="eyebrow">YOUR WORLD OF SPORT</p><h2 id="sports-heading">CHOOSE<br /><span>YOUR GAME.</span></h2></div><Link className="text-link" href="/sports">All sports ↗</Link></div>
