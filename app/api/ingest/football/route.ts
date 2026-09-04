@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { ingestFootballCatalogue } from '@/lib/ingest/football-data';
 
 export const runtime = 'nodejs';
