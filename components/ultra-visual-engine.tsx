@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { LiquidMetal } from '@paper-design/shaders-react';
 import { ShaderGradient, ShaderGradientCanvas } from '@shadergradient/react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Color, Mesh } from 'three';
+import { Color, type Mesh } from 'three';
 import { mountGlass } from '@liquidglassjs/core';
 
 const LIQUID_FC_MARK = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300"><rect width="600" height="300" fill="transparent"/><text x="300" y="215" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="220" font-weight="900" letter-spacing="-12" fill="white">FC</text></svg>`)}`;
