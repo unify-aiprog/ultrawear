@@ -12,19 +12,41 @@
     "test:platform": "node --test --experimental-strip-types lib/platform-contracts.test.ts",
     "test:privacy": "node --test --experimental-strip-types lib/privacy/*.test.ts",
     "test:browser": "playwright test",
-    "constitution:check": "node scripts/constitution-check.mjs"
+    "test:e2e": "playwright test",
+    "test:a11y": "playwright test tests/a11y.spec.ts",
+    "test:quality": "npm run constitution:check && npm run check && npm run lint",
+    "test:weekend": "npm run test:quality && npm run build && npm run test:e2e",
+    "analyze": "ANALYZE=true next build",
+    "constitution:check": "node scripts/constitution-check.mjs",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
   },
   "dependencies": {
+    "@liquidglassjs/core": "0.5.0",
+    "@paper-design/shaders-react": "0.0.78",
+    "@react-three/fiber": "9.7.0",
+    "@shadergradient/react": "2.4.20",
+    "@sentry/nextjs": "^10.16.0",
     "@supabase/supabase-js": "^2.57.0",
+    "@tanstack/react-query": "^5.90.5",
     "next": "^15.5.7",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-aria-components": "^1.10.1",
+    "react-dom": "^19.1.1",
+    "three": "0.169.0",
+    "three-stdlib": "2.35.15",
+    "zod": "^4.1.11",
+    "motion": "^12.23.24"
   },
   "devDependencies": {
-    "@playwright/test": "^1.55.0",
+    "@axe-core/playwright": "^4.10.2",
+    "@next/bundle-analyzer": "^15.5.7",
+    "@playwright/test": "^1.55.1",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react-dom": "^19.1.1",
+    "@types/three": "0.169.0",
+    "@biomejs/biome": "2.2.4",
     "typescript": "^5.7.2"
   }
 }
