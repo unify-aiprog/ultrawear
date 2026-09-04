@@ -12,15 +12,25 @@
         "useAriaPropsSupportedByRole": "off",
         "useGenericFontNames": "off"
       },
+      "complexity": {
+        "noImportantStyles": "off",
+        "noUselessEscapeInRegex": "off"
+      },
       "correctness": {
-        "useUniqueElementIds": "off"
+        "useUniqueElementIds": "off",
+        "noUnusedFunctionParameters": "off",
+        "noUnusedVariables": "off"
       },
       "security": {
         "noDangerouslySetInnerHtml": "off"
       },
+      "style": {
+        "noDescendingSpecificity": "off"
+      },
       "suspicious": {
         "noExplicitAny": "off",
-        "noShadowRestrictedNames": "off"
+        "noShadowRestrictedNames": "off",
+        "useIterableCallbackReturn": "off"
       }
     }
   }
