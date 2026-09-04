@@ -9,9 +9,12 @@ const requiredFiles = [
   'README.md',
   'app/layout.tsx',
   'app/error.tsx',
+  'app/global-error.tsx',
+  'app/not-found.tsx',
   'app/sitemap.ts',
   'app/robots.ts',
   'next.config.ts',
+  '.github/workflows/weekend-readiness.yml',
 ];
 
 for (const file of requiredFiles) {
@@ -58,8 +61,13 @@ for (const route of ['/sports', '/catalogue', '/teams', '/fixtures', '/live', '/
   if (!sitemap.includes(`'${route}'`)) failures.push(`Sitemap missing constitutional primary route: ${route}`);
 }
 
+const workflowFiles = fs.existsSync(path.join(root, '.github/workflows'))
+  ? fs.readdirSync(path.join(root, '.github/workflows')).filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'))
+  : [];
+if (workflowFiles.includes('live-sync.yml')) failures.push('Duplicate live sync workflow remains: .github/workflows/live-sync.yml');
+if (!workflowFiles.includes('live-football.yml')) failures.push('Canonical live football sync workflow is missing');
+
 // Catch hard-coded internal links that point at a path with no Next route.
-// Dynamic links containing ${...} are intentionally skipped because their params are resolved at runtime.
 const sourceRoots = ['app', 'components'];
 const sourceExtensions = new Set(['.tsx', '.ts', '.jsx', '.js', '.html']);
 const files = [];
@@ -74,8 +82,6 @@ function walk(dir) {
 }
 sourceRoots.forEach((dir) => walk(path.join(root, dir)));
 
-const routeFiles = [];
-walk(path.join(root, 'app'));
 for (const file of files) {
   const source = fs.readFileSync(file, 'utf8');
   const linkPattern = /(?:href|src)=["'](\/[A-Za-z0-9._~!$&'()*+,;=:@%\/-]+)(?:[?#][^"']*)?["']/g;

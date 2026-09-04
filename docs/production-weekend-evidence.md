@@ -4,7 +4,7 @@
 
 Record the final production evidence for the September 5–6, 2026 weekend readiness run and the September 15, 2026 launch decision.
 
-This document separates **repo-verifiable evidence** from **production-only evidence**. A green CI run is necessary, but it is not a substitute for observing the deployed application and scheduled ingestion in production.
+A green CI run is necessary, but it is not a substitute for observing the deployed application and scheduled ingestion in production.
 
 ## Evidence window
 
@@ -28,12 +28,6 @@ This document separates **repo-verifiable evidence** from **production-only evid
 | Mobile smoke | Launch routes on mobile viewport | Navigation/layout usable; no blocking overflow | PENDING |
 | SEO | Sitemap, robots, canonical, OG, structured data | Valid and consistent with production origin | PENDING |
 
-## Weekend evidence notes
-
-The weekend is materially active across sports: the September 5–6 calendar includes Premier League football and the US Open tennis, while the FIBA Women's Basketball World Cup is underway from September 4–13. This makes the weekend suitable for exercising multi-sport coverage and live-state behavior.
-
-Do not convert external fixture calendars into product coverage claims. Product coverage must be established from the deployed UltraWear data and health endpoints.
-
 ## Evidence record
 
 For each production observation, record:
@@ -56,7 +50,7 @@ For each production observation, record:
 3. Each enabled scheduled ingestion workflow has completed at least one successful production cycle.
 4. Weekend sports readiness shows no canonical identity/status violations.
 5. Live lifecycle checks show stable event identity and canonical status transitions.
-6. Provider and Redis degradation paths remain bounded and non-fatal.
+6. Provider and cache degradation paths remain bounded and non-fatal.
 7. Homepage, sport, event, and live routes pass desktop/mobile smoke checks.
 8. Production sitemap, robots, canonical URLs, and structured data resolve correctly.
 

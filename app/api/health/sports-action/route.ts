@@ -81,7 +81,7 @@ export async function GET() {
     const item = perSport[sport] as { canonicalStatusViolations: number; identityViolations: number };
     return sum + item.canonicalStatusViolations + item.identityViolations;
   }, 0);
-  const ready = violations === 0;
+  const ready = missingSports.length === 0 && violations === 0;
 
   return NextResponse.json({
     ok: ready,
