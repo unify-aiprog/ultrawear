@@ -23,7 +23,7 @@ jobs:
       - name: Type check
         run: npm run check
       - name: Biome quality gate
-        run: npm run lint
+        run: npx biome check --formatter-enabled=false --assist-enabled=false .
       - name: Production build
         run: npm run build
       - name: Browser regression and accessibility gates
