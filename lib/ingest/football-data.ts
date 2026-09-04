@@ -1,5 +1,5 @@
 import { getSupabaseServerClient } from '@/lib/supabase';
-import { listCompetitionTeams, listCompetitions, listMatches, type FootballDataArea, type FootballDataCompetition, type FootballDataTeam } from '@/lib/providers/football-data';
+import { listCompetitionTeams, listCompetitions, listMatches, type FootballDataArea, type FootballDataTeam } from '@/lib/providers/football-data';
 
 const PROVIDER = 'football-data.org';
 const slugify = (value: string) => value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 100);
@@ -52,7 +52,6 @@ export async function ingestFootballCatalogue() {
     }
   }
 
-  // One global match request covers all competitions instead of making a request per league.
   const from = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
   const to = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10);
   const { matches } = await listMatches({ dateFrom: from, dateTo: to });
