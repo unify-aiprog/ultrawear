@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getStoredProgramme } from '@/lib/sports/engine';
+import { getStoredProgramme, isProgrammeStale } from '@/lib/sports/engine';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,6 +14,7 @@ export async function GET() {
         programme: null,
         feedError: true,
         persisted: false,
+        stale: true,
         reason: 'No persisted Sports Brain programme is available yet.',
       },
       {
@@ -23,12 +24,15 @@ export async function GET() {
     );
   }
 
+  const stale = isProgrammeStale(stored.updatedAt);
   return NextResponse.json(
     {
       updatedAt: stored.updatedAt,
       programme: stored.programme,
       feedError: false,
       persisted: true,
+      stale,
+      sourceHealth: stored.sourceHealth,
     },
     { headers: { 'Cache-Control': 'no-store, max-age=0' } },
   );
