@@ -7,20 +7,24 @@ import { articles } from '@/lib/editorial';
 
 const articleImage = (slug: string) => slug === 'the-game-is-bigger-than-the-score' ? '/assets/news-community.svg' : slug === 'built-by-fans-made-for-everyone' ? '/assets/news-matchday.svg' : '/assets/news-sport-world.svg';
 
+type LivePayload = { programme?: SportsProgramme | null; feedError?: boolean; updatedAt?: string | null; persisted?: boolean };
+
 export function LiveMatchList({ initialProgramme }: { initialProgramme: SportsProgramme }) {
   const [programme, setProgramme] = useState(initialProgramme);
   const [feedUnavailable, setFeedUnavailable] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     const refresh = async () => {
       try {
         const response = await fetch(`/api/live?refresh=${Date.now()}`, { cache: 'no-store', headers: { accept: 'application/json', 'cache-control': 'no-cache' } });
-        if (!response.ok) throw new Error('feed unavailable');
-        const payload = await response.json() as { programme?: SportsProgramme; feedError?: boolean };
-        if (active && payload.programme) {
+        const payload = await response.json() as LivePayload;
+        if (!response.ok || !payload.programme) throw new Error('programme unavailable');
+        if (active) {
           setProgramme(payload.programme);
           setFeedUnavailable(Boolean(payload.feedError));
+          setLastUpdated(payload.updatedAt ?? null);
         }
       } catch {
         if (active) setFeedUnavailable(true);
@@ -31,9 +35,12 @@ export function LiveMatchList({ initialProgramme }: { initialProgramme: SportsPr
     return () => { active = false; window.clearInterval(interval); };
   }, []);
 
+  const hasProgramme = programme.now.length || programme.next.length || programme.tonight.length || programme.tomorrow.length || programme.thisWeekend.length || programme.recent.length;
+
   return (
     <div className="live-programme" aria-live="polite">
-      {feedUnavailable && <p className="live-refresh-note">Verified live feed temporarily unavailable. The programme is showing the last trusted state and will retry automatically.</p>}
+      {feedUnavailable && <p className="live-refresh-note" role="status">The latest trusted programme could not be refreshed. No unverified scores, fixtures or statuses are being substituted.</p>}
+      {lastUpdated && <p className="live-refresh-note">LAST VERIFIED PROGRAMME UPDATE · {formatUpdatedAt(lastUpdated)}</p>}
       {programme.lead && (
         <section className="detail-section" aria-labelledby="lead-title">
           <div className="section-heading"><span>{programme.lead.priority === 'BLOCKBUSTER' ? 'THE BIG ONE' : programme.lead.window === 'NOW' ? 'LIVE NOW' : 'WHAT’S NEXT'}</span><h2 id="lead-title">{eventTitle(programme.lead)}</h2></div>
@@ -50,7 +57,7 @@ export function LiveMatchList({ initialProgramme }: { initialProgramme: SportsPr
       <ProgrammeSection title="THIS WEEKEND." eyebrow="THIS WEEKEND" events={programme.thisWeekend} />
       <ProgrammeSection title="RECENT." eyebrow="AFTER THE WHISTLE" events={programme.recent} recent />
 
-      {!programme.now.length && !programme.next.length && !programme.tonight.length && !programme.tomorrow.length && !programme.thisWeekend.length && !programme.recent.length && (
+      {!hasProgramme && (
         <section className="live-empty-with-news">
           <div className="empty-state"><strong>THE PROGRAMME IS ON.</strong><span>No verified event is available in the current programme window. We will promote the next trusted event automatically.</span></div>
           <section className="detail-section" aria-labelledby="latest-news-title">
@@ -86,4 +93,8 @@ function countdown(minutes?: number) {
   const hours = Math.floor(minutes / 60);
   const remaining = minutes % 60;
   return remaining ? `IN ${hours}H ${remaining}M` : `IN ${hours}H`;
+}
+function formatUpdatedAt(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'UNKNOWN' : date.toLocaleString();
 }
