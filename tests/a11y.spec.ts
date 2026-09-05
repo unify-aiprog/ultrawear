@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 const routes = [
-  '/', '/sports', '/live', '/news', '/community', '/shop', '/teams',
+  '/', '/sports', '/live', '/weekend', '/news', '/community', '/shop', '/teams',
   '/fixtures', '/catalogue', '/matches', '/about', '/contact', '/experience',
 ];
 
