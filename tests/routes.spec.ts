@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const routes = [
-  '/', '/sports', '/live', '/news', '/community', '/shop', '/teams',
+  '/', '/sports', '/live', '/weekend', '/news', '/community', '/shop', '/teams',
   '/fixtures', '/catalogue', '/matches', '/about', '/contact', '/experience',
 ];
 
@@ -22,7 +22,7 @@ test('homepage has no horizontal overflow on mobile', async ({ page }) => {
 
 test('core pages have no horizontal overflow on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const route of ['/sports', '/live', '/news', '/community', '/teams']) {
+  for (const route of ['/sports', '/live', '/weekend', '/news', '/community', '/teams']) {
     await page.goto(route, { waitUntil: 'domcontentloaded' });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
     expect(overflow, `${route} overflows horizontally`).toBeFalsy();

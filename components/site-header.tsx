@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 
-const links = [['Sports', '/sports'], ['Catalogue', '/catalogue'], ['Teams', '/teams'], ['Fixtures', '/fixtures'], ['Live', '/live'], ['News', '/news'], ['About', '/about']];
+const links = [['Sports', '/sports'], ['Weekend', '/weekend'], ['Catalogue', '/catalogue'], ['Teams', '/teams'], ['Fixtures', '/fixtures'], ['Live', '/live'], ['News', '/news'], ['About', '/about']];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
