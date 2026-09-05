@@ -21,14 +21,8 @@ export function LiveMatchList({ initialProgramme }: { initialProgramme: SportsPr
         const response = await fetch(`/api/live?refresh=${Date.now()}`, { cache: 'no-store', headers: { accept: 'application/json', 'cache-control': 'no-cache' } });
         const payload = await response.json() as LivePayload;
         if (!response.ok || !payload.programme) throw new Error('programme unavailable');
-        if (active) {
-          setProgramme(payload.programme);
-          setFeedUnavailable(Boolean(payload.feedError));
-          setLastUpdated(payload.updatedAt ?? null);
-        }
-      } catch {
-        if (active) setFeedUnavailable(true);
-      }
+        if (active) { setProgramme(payload.programme); setFeedUnavailable(Boolean(payload.feedError)); setLastUpdated(payload.updatedAt ?? null); }
+      } catch { if (active) setFeedUnavailable(true); }
     };
     const interval = window.setInterval(refresh, 30_000);
     refresh();
@@ -39,7 +33,7 @@ export function LiveMatchList({ initialProgramme }: { initialProgramme: SportsPr
 
   return (
     <div className="live-programme" aria-live="polite">
-      {feedUnavailable && <p className="live-refresh-note" role="status">The latest trusted programme could not be refreshed. No unverified scores, fixtures or statuses are being substituted.</p>}
+      {feedUnavailable && <output className="live-refresh-note">The latest trusted programme could not be refreshed. No unverified scores, fixtures or statuses are being substituted.</output>}
       {lastUpdated && <p className="live-refresh-note">LAST VERIFIED PROGRAMME UPDATE · {formatUpdatedAt(lastUpdated)}</p>}
       {programme.lead && (
         <section className="detail-section" aria-labelledby="lead-title">
@@ -56,16 +50,7 @@ export function LiveMatchList({ initialProgramme }: { initialProgramme: SportsPr
       <ProgrammeSection title="TOMORROW." eyebrow="TOMORROW" events={programme.tomorrow} />
       <ProgrammeSection title="THIS WEEKEND." eyebrow="THIS WEEKEND" events={programme.thisWeekend} />
       <ProgrammeSection title="RECENT." eyebrow="AFTER THE WHISTLE" events={programme.recent} recent />
-
-      {!hasProgramme && (
-        <section className="live-empty-with-news">
-          <div className="empty-state"><strong>THE PROGRAMME IS ON.</strong><span>No verified event is available in the current programme window. We will promote the next trusted event automatically.</span></div>
-          <section className="detail-section" aria-labelledby="latest-news-title">
-            <div className="section-heading"><span>THE CULTURE</span><h2 id="latest-news-title">LATEST.</h2></div>
-            <div className="index-grid">{articles.slice(0, 3).map((article) => <Link className="index-card" href={`/news/${article.slug}`} key={article.slug}><div aria-hidden="true" style={{ height: 180, marginBottom: 18, backgroundImage: `url(${articleImage(article.slug)})`, backgroundPosition: 'center', backgroundSize: 'cover', border: '1px solid var(--line)' }} /><span>{article.category} · {article.date}</span><b>{article.title}</b><small>{article.dek}</small></Link>)}</div>
-          </section>
-        </section>
-      )}
+      {!hasProgramme && <section className="live-empty-with-news"><div className="empty-state"><strong>THE PROGRAMME IS ON.</strong><span>No verified event is available in the current programme window. We will promote the next trusted event automatically.</span></div><section className="detail-section" aria-labelledby="latest-news-title"><div className="section-heading"><span>THE CULTURE</span><h2 id="latest-news-title">LATEST.</h2></div><div className="index-grid">{articles.slice(0, 3).map((article) => <Link className="index-card" href={`/news/${article.slug}`} key={article.slug}><div aria-hidden="true" style={{ height: 180, marginBottom: 18, backgroundImage: `url(${articleImage(article.slug)})`, backgroundPosition: 'center', backgroundSize: 'cover', border: '1px solid var(--line)' }} /><span>{article.category} · {article.date}</span><b>{article.title}</b><small>{article.dek}</small></Link>)}</div></section></section>}
     </div>
   );
 }
@@ -86,15 +71,5 @@ function participantName(event: ProgrammeEvent, side: 'home' | 'away') { return 
 function eventTitle(event: ProgrammeEvent) { return event.home && event.away ? `${event.home.name} v ${event.away.name}` : event.competition; }
 function score(value?: number | null) { return value == null ? '—' : String(value); }
 function startLabel(event: ProgrammeEvent) { return event.minutesUntilStart === undefined ? 'TBC' : countdown(event.minutesUntilStart); }
-function countdown(minutes?: number) {
-  if (minutes === undefined) return 'TBC';
-  if (minutes <= 0) return 'STARTS NOW';
-  if (minutes < 60) return `IN ${minutes}M`;
-  const hours = Math.floor(minutes / 60);
-  const remaining = minutes % 60;
-  return remaining ? `IN ${hours}H ${remaining}M` : `IN ${hours}H`;
-}
-function formatUpdatedAt(value: string) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? 'UNKNOWN' : date.toLocaleString();
-}
+function countdown(minutes?: number) { if (minutes === undefined) return 'TBC'; if (minutes <= 0) return 'STARTS NOW'; if (minutes < 60) return `IN ${minutes}M`; const hours = Math.floor(minutes / 60); const remaining = minutes % 60; return remaining ? `IN ${hours}H ${remaining}M` : `IN ${hours}H`; }
+function formatUpdatedAt(value: string) { const date = new Date(value); return Number.isNaN(date.getTime()) ? 'UNKNOWN' : date.toLocaleString(); }
