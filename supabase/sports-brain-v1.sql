@@ -50,6 +50,17 @@ alter table public.sports_brain_events enable row level security;
 alter table public.sports_brain_programme_state enable row level security;
 alter table public.sports_brain_provider_health enable row level security;
 
-create policy if not exists sports_brain_events_public_read on public.sports_brain_events for select using (true);
-create policy if not exists sports_brain_programme_public_read on public.sports_brain_programme_state for select using (true);
-create policy if not exists sports_brain_health_public_read on public.sports_brain_provider_health for select using (true);
+do $$ begin
+  create policy sports_brain_events_public_read on public.sports_brain_events for select using (true);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create policy sports_brain_programme_public_read on public.sports_brain_programme_state for select using (true);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create policy sports_brain_health_public_read on public.sports_brain_provider_health for select using (true);
+exception when duplicate_object then null;
+end $$;
