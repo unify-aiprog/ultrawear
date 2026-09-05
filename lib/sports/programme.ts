@@ -74,11 +74,19 @@ function windowFor(event: NormalizedSportsEvent, now: number): ProgrammeWindow |
 }
 
 export function buildSportsProgramme(events: NormalizedSportsEvent[], sport: SportSlug | 'all' = 'all', now = Date.now(), sourceHealth: SportsProgramme['sourceHealth'] = { healthy: 0, degraded: 0, down: 0, notConfigured: 0 }): SportsProgramme {
-  const enriched = events.map((event) => {
+  const enriched: ProgrammeEvent[] = [];
+  for (const event of events) {
     const start = Date.parse(event.startsAt);
     const window = windowFor(event, now);
-    return window ? { ...event, importance: scoreEvent(event, now), priority: programmePriority(event, now), minutesUntilStart: Number.isFinite(start) ? Math.round((start - now) / 60_000) : undefined, window } : null;
-  }).filter((event): event is ProgrammeEvent => Boolean(event));
+    if (!window) continue;
+    enriched.push({
+      ...event,
+      importance: scoreEvent(event, now),
+      priority: programmePriority(event, now),
+      ...(Number.isFinite(start) ? { minutesUntilStart: Math.round((start - now) / 60_000) } : {}),
+      window,
+    });
+  }
   const sort = (a: ProgrammeEvent, b: ProgrammeEvent) => b.importance - a.importance || Date.parse(a.startsAt) - Date.parse(b.startsAt);
   const by = (window: ProgrammeWindow) => enriched.filter((event) => event.window === window).sort(sort);
   const nowEvents = by('NOW');
