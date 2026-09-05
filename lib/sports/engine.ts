@@ -22,6 +22,7 @@ export async function refreshSportsBrain() {
   const recent = new Date(now.getTime() - RECENT_HOURS * 3_600_000);
   const allEvents: NormalizedSportsEvent[] = [];
   const health: ProviderHealth[] = [];
+
   for (const provider of sportsProviders) {
     try {
       const [live, upcoming, finished, providerHealth] = await Promise.all([
@@ -33,32 +34,104 @@ export async function refreshSportsBrain() {
       allEvents.push(...live, ...upcoming, ...finished);
       health.push(providerHealth);
     } catch (error) {
-      health.push({ provider: provider.name, sport: provider.sport, status: 'down', checkedAt: new Date().toISOString(), error: error instanceof Error ? error.message : 'Unknown provider error' });
+      health.push({
+        provider: provider.name,
+        sport: provider.sport,
+        status: 'down',
+        checkedAt: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown provider error',
+      });
     }
   }
+
   const deduped = [...new Map(allEvents.map((event) => [event.id, event])).values()];
+  const staleCutoff = new Date(now.getTime() - STALE_LIVE_HOURS * 3_600_000);
+  const trustedEvents = deduped.filter((event) => {
+    if (event.status !== 'IN_PLAY' && event.status !== 'PAUSED') return true;
+    const start = Date.parse(event.startsAt);
+    return !Number.isFinite(start) || start >= staleCutoff.getTime();
+  });
   const sourceHealth = summarizeHealth(health);
   const enabledProviders = health.filter((item) => item.status !== 'not_configured');
   const totalEnabledProviderFailure = enabledProviders.length > 0 && enabledProviders.every((item) => item.status === 'down');
-  const programme = buildSportsProgramme(deduped, 'all', now.getTime(), sourceHealth);
+  const programme = buildSportsProgramme(trustedEvents, 'all', now.getTime(), sourceHealth);
   const ranked = new Map([...programme.now, ...programme.next, ...programme.tonight, ...programme.tomorrow, ...programme.thisWeekend, ...programme.recent].map((item) => [item.id, item]));
+
   if (deduped.length) {
-    const rows = deduped.map((event) => ({ id: event.id, sport: event.sport, starts_at: event.startsAt, status: event.status, competition: event.competition, stage: event.stage ?? null, home: event.home ?? null, away: event.away ?? null, participants: event.participants ?? null, home_score: event.homeScore ?? null, away_score: event.awayScore ?? null, provider: event.provider, provider_id: event.providerId, updated_at: event.updatedAt ?? now.toISOString(), importance: ranked.get(event.id)?.importance ?? 0, priority: ranked.get(event.id)?.priority ?? 'BACKGROUND' }));
+    const rows = deduped.map((event) => ({
+      id: event.id,
+      sport: event.sport,
+      starts_at: event.startsAt,
+      status: event.status,
+      competition: event.competition,
+      stage: event.stage ?? null,
+      home: event.home ?? null,
+      away: event.away ?? null,
+      participants: event.participants ?? null,
+      home_score: event.homeScore ?? null,
+      away_score: event.awayScore ?? null,
+      provider: event.provider,
+      provider_id: event.providerId,
+      updated_at: event.updatedAt ?? now.toISOString(),
+      importance: ranked.get(event.id)?.importance ?? 0,
+      priority: ranked.get(event.id)?.priority ?? 'BACKGROUND',
+    }));
     const { error } = await supabase.from('sports_brain_events').upsert(rows, { onConflict: 'id' });
     if (error) throw new Error(`Unable to persist Sports Brain events: ${error.message}`);
   }
-  const staleCutoff = new Date(now.getTime() - STALE_LIVE_HOURS * 3_600_000).toISOString();
-  const { error: staleError } = await supabase.from('sports_brain_events').update({ status: 'FINISHED', updated_at: now.toISOString() }).in('status', ['IN_PLAY', 'PAUSED']).lt('starts_at', staleCutoff);
+
+  const staleCutoffIso = staleCutoff.toISOString();
+  const { error: staleError } = await supabase
+    .from('sports_brain_events')
+    .update({ status: 'FINISHED', updated_at: now.toISOString() })
+    .in('status', ['IN_PLAY', 'PAUSED'])
+    .lt('starts_at', staleCutoffIso);
   if (staleError) throw new Error(`Unable to reconcile stale Sports Brain events: ${staleError.message}`);
-  const { error: healthError } = await supabase.from('sports_brain_provider_health').upsert(health.map((item) => ({ provider: item.provider, sport: item.sport, status: item.status, checked_at: item.checkedAt, last_success_at: item.lastSuccessAt ?? null, latency_ms: item.latencyMs ?? null, error: item.error ?? null })), { onConflict: 'provider' });
+
+  const { error: healthError } = await supabase.from('sports_brain_provider_health').upsert(
+    health.map((item) => ({
+      provider: item.provider,
+      sport: item.sport,
+      status: item.status,
+      checked_at: item.checkedAt,
+      last_success_at: item.lastSuccessAt ?? null,
+      latency_ms: item.latencyMs ?? null,
+      error: item.error ?? null,
+    })),
+    { onConflict: 'provider' },
+  );
   if (healthError) throw new Error(`Unable to persist provider health: ${healthError.message}`);
+
   if (totalEnabledProviderFailure) {
-    return { programme: await getStoredProgramme().then((stored) => stored?.programme ?? programme), events: deduped.length, providers: health, preservedTrustedState: true };
+    const stored = await getStoredProgramme();
+    return {
+      programme: stored?.programme ?? programme,
+      events: trustedEvents.length,
+      providers: health,
+      preservedTrustedState: Boolean(stored),
+    };
   }
+
   const ids = (items: { id: string }[]) => items.map((item) => item.id);
-  const { error: programmeError } = await supabase.from('sports_brain_programme_state').upsert({ id: 'global', lead_event_id: programme.lead?.id ?? null, live_event_ids: ids(programme.now), next_event_ids: ids(programme.next), tonight_event_ids: ids(programme.tonight), tomorrow_event_ids: ids(programme.tomorrow), weekend_event_ids: ids(programme.thisWeekend), recent_event_ids: ids(programme.recent), editorial_priority: programme.lead?.priority ?? null, programme, source_health: health, updated_at: now.toISOString() }, { onConflict: 'id' });
+  const { error: programmeError } = await supabase.from('sports_brain_programme_state').upsert(
+    {
+      id: 'global',
+      lead_event_id: programme.lead?.id ?? null,
+      live_event_ids: ids(programme.now),
+      next_event_ids: ids(programme.next),
+      tonight_event_ids: ids(programme.tonight),
+      tomorrow_event_ids: ids(programme.tomorrow),
+      weekend_event_ids: ids(programme.thisWeekend),
+      recent_event_ids: ids(programme.recent),
+      editorial_priority: programme.lead?.priority ?? null,
+      programme,
+      source_health: health,
+      updated_at: now.toISOString(),
+    },
+    { onConflict: 'id' },
+  );
   if (programmeError) throw new Error(`Unable to persist programme state: ${programmeError.message}`);
-  return { programme, events: deduped.length, providers: health, preservedTrustedState: false };
+  return { programme, events: trustedEvents.length, providers: health, preservedTrustedState: false };
 }
 
 export async function getStoredProgramme(): Promise<{ programme: SportsProgramme; sourceHealth: ProviderHealth[]; updatedAt: string } | null> {
@@ -66,7 +139,21 @@ export async function getStoredProgramme(): Promise<{ programme: SportsProgramme
   if (!supabase) return null;
   const { data, error } = await supabase.from('sports_brain_programme_state').select('programme,source_health,updated_at').eq('id', 'global').maybeSingle();
   if (error || !data?.programme) return null;
-  return { programme: data.programme as SportsProgramme, sourceHealth: Array.isArray(data.source_health) ? data.source_health as ProviderHealth[] : [], updatedAt: data.updated_at };
+
+  const { data: healthRows } = await supabase.from('sports_brain_provider_health').select('provider,sport,status,checked_at,last_success_at,latency_ms,error');
+  const sourceHealth = healthRows?.length
+    ? (healthRows.map((row) => ({
+        provider: row.provider,
+        sport: row.sport,
+        status: row.status,
+        checkedAt: row.checked_at,
+        lastSuccessAt: row.last_success_at ?? undefined,
+        latencyMs: row.latency_ms ?? undefined,
+        error: row.error ?? undefined,
+      })) as ProviderHealth[])
+    : (Array.isArray(data.source_health) ? (data.source_health as ProviderHealth[]) : []);
+
+  return { programme: data.programme as SportsProgramme, sourceHealth, updatedAt: data.updated_at };
 }
 
 export async function getSportProgramme(sport: SportSlug): Promise<SportsProgramme> {
