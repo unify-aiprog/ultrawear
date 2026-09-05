@@ -1,0 +1,22 @@
+name: UltraWear Sports Brain
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refresh programme state
+        env:
+          SPORTS_BRAIN_URL: ${{ secrets.SPORTS_BRAIN_URL }}
+          SPORTS_BRAIN_CRON_SECRET: ${{ secrets.SPORTS_BRAIN_CRON_SECRET }}
+        run: |
+          test -n "$SPORTS_BRAIN_URL"
+          test -n "$SPORTS_BRAIN_CRON_SECRET"
+          curl --fail-with-body --silent --show-error \
+            -X POST "$SPORTS_BRAIN_URL/api/sports-brain/refresh" \
+            -H "Authorization: Bearer $SPORTS_BRAIN_CRON_SECRET" \
+            -H "Content-Type: application/json"
