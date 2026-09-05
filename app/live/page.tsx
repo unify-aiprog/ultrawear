@@ -9,14 +9,22 @@ export const metadata: Metadata = {
 };
 
 const emptyProgramme: SportsProgramme = {
-  generatedAt: new Date(0).toISOString(), sport: 'all', lead: null, now: [], next: [], tonight: [], tomorrow: [], thisWeekend: [], recent: [],
+  generatedAt: new Date(0).toISOString(),
+  sport: 'all',
+  lead: null,
+  now: [],
+  next: [],
+  tonight: [],
+  tomorrow: [],
+  thisWeekend: [],
+  recent: [],
   sourceHealth: { healthy: 0, degraded: 0, down: 0, notConfigured: 0 },
   editorial: { kicker: 'THE PROGRAMME', headline: 'Stay close to sport.', body: 'The live programme is waiting for its first verified refresh.' },
 };
 
 export default async function LivePage() {
   const stored = await getStoredProgramme();
-  const programme = (stored?.programme ?? emptyProgramme) as SportsProgramme;
+  const programme: SportsProgramme = stored?.programme ?? emptyProgramme;
   return (
     <div className="page-wrap">
       <section className="page-hero">
