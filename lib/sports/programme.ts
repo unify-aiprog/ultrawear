@@ -24,18 +24,32 @@ export type SportsProgramme = {
   editorial: { kicker: string; headline: string; body: string };
 };
 
-const BIG_COMPETITIONS = ['world cup', 'champions league', 'premier league', 'olympics', 'grand slam', 'final', 'playoff', 'play-offs', 'super bowl'];
-const BIG_TEAMS = ['real madrid', 'barcelona', 'liverpool', 'arsenal', 'manchester united', 'manchester city', 'bayern', 'juventus', 'inter', 'chelsea'];
+const MAJOR_COMPETITION_TERMS = ['world cup', 'world championship', 'championship', 'olympics', 'olympic', 'grand slam', 'champions league', 'super bowl', 'final', 'playoff', 'play-offs', 'semi-final', 'semifinal'];
+const HIGH_AUDIENCE_TERMS = ['premier league', 'la liga', 'serie a', 'bundesliga', 'nba', 'nfl', 'mlb', 'nhl', 'formula 1', 'formula one', 'wimbledon', 'us open', 'australian open', 'roland garros'];
+const HIGH_STAKES_TERMS = ['final', 'semi-final', 'semifinal', 'quarter-final', 'quarterfinal', 'relegation', 'promotion', 'qualification', 'qualifier', 'title decider', 'championship decider'];
+const RIVALRY_TERMS = ['derby', 'rivalry', 'clasico', 'clásico', 'el clasico', 'el clásico'];
+const HIGH_PROFILE_TEAMS = ['real madrid', 'barcelona', 'liverpool', 'arsenal', 'manchester united', 'manchester city', 'bayern', 'juventus', 'chelsea'];
 
 export function scoreEvent(event: NormalizedSportsEvent, now = Date.now()) {
   let score = 15;
   const text = `${event.competition} ${event.stage ?? ''} ${event.home?.name ?? ''} ${event.away?.name ?? ''}`.toLowerCase();
-  if (BIG_COMPETITIONS.some((term) => text.includes(term))) score += 30;
-  if (BIG_TEAMS.filter((team) => text.includes(team)).length >= 2) score += 22;
-  else if (BIG_TEAMS.some((team) => text.includes(team))) score += 10;
-  score += Math.min(20, Math.max(0, event.significance?.competitionWeight ?? 0));
-  score += Math.min(15, Math.max(0, event.significance?.championshipWeight ?? 0));
-  score += Math.min(10, Math.max(0, event.significance?.rivalryWeight ?? 0));
+  const significance = event.significance ?? {};
+
+  if (MAJOR_COMPETITION_TERMS.some((term) => text.includes(term))) score += 24;
+  if (HIGH_AUDIENCE_TERMS.some((term) => text.includes(term))) score += 10;
+  if (HIGH_STAKES_TERMS.some((term) => text.includes(term))) score += 16;
+  if (RIVALRY_TERMS.some((term) => text.includes(term))) score += 10;
+  const profileCount = HIGH_PROFILE_TEAMS.filter((team) => text.includes(team)).length;
+  score += profileCount >= 2 ? 12 : profileCount === 1 ? 5 : 0;
+
+  score += boundedWeight(significance.competitionWeight, 12);
+  score += boundedWeight(significance.stageWeight, 10);
+  score += boundedWeight(significance.rivalryWeight, 10);
+  score += boundedWeight(significance.championshipWeight, 12);
+  score += boundedWeight(significance.athleteWeight, 8);
+  score += boundedWeight(significance.audienceWeight, 8);
+  score += boundedWeight(significance.communityWeight, 5);
+
   if (event.status === 'IN_PLAY' || event.status === 'PAUSED') score += 35;
   const start = Date.parse(event.startsAt);
   if (Number.isFinite(start)) {
@@ -45,6 +59,10 @@ export function scoreEvent(event: NormalizedSportsEvent, now = Date.now()) {
     else if (hours <= 72) score += 5;
   }
   return Math.min(100, score);
+}
+
+function boundedWeight(value: number | undefined, cap: number) {
+  return Math.min(cap, Math.max(0, value ?? 0));
 }
 
 export function programmePriority(event: NormalizedSportsEvent, now = Date.now()): ProgrammePriority {
@@ -63,7 +81,7 @@ function windowFor(event: NormalizedSportsEvent, now: number): ProgrammeWindow |
   const hours = delta / 3_600_000;
   if (event.status === 'IN_PLAY' || event.status === 'PAUSED') return 'NOW';
   if (event.status === 'FINISHED' && delta > -12 * 3_600_000) return 'RECENT';
-  if (delta < 0) return null;
+  if (delta < 0 || ['POSTPONED', 'SUSPENDED', 'CANCELLED'].includes(event.status)) return null;
   const date = new Date(start);
   const today = new Date(now);
   const tomorrow = new Date(now + 24 * 3_600_000);
@@ -79,22 +97,16 @@ export function buildSportsProgramme(events: NormalizedSportsEvent[], sport: Spo
     const start = Date.parse(event.startsAt);
     const window = windowFor(event, now);
     if (!window) continue;
-    enriched.push({
-      ...event,
-      importance: scoreEvent(event, now),
-      priority: programmePriority(event, now),
-      ...(Number.isFinite(start) ? { minutesUntilStart: Math.round((start - now) / 60_000) } : {}),
-      window,
-    });
+    enriched.push({ ...event, importance: scoreEvent(event, now), priority: programmePriority(event, now), ...(Number.isFinite(start) ? { minutesUntilStart: Math.round((start - now) / 60_000) } : {}), window });
   }
-  const sort = (a: ProgrammeEvent, b: ProgrammeEvent) => b.importance - a.importance || Date.parse(a.startsAt) - Date.parse(b.startsAt);
+  const sort = (a: ProgrammeEvent, b: ProgrammeEvent) => b.importance - a.importance || Date.parse(a.startsAt) - Date.parse(b.startsAt) || a.id.localeCompare(b.id);
   const by = (window: ProgrammeWindow) => enriched.filter((event) => event.window === window).sort(sort);
   const nowEvents = by('NOW');
   const next = by('NEXT').slice(0, 8);
   const tonight = by('TONIGHT').slice(0, 8);
   const tomorrow = by('TOMORROW').slice(0, 8);
   const thisWeekend = by('THIS_WEEKEND').slice(0, 8);
-  const recent = by('RECENT').sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)).slice(0, 8);
+  const recent = by('RECENT').sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt) || a.id.localeCompare(b.id)).slice(0, 8);
   const lead = nowEvents[0] ?? next[0] ?? tonight[0] ?? tomorrow[0] ?? thisWeekend[0] ?? recent[0] ?? null;
   const liveCopy = nowEvents.length === 1 && nowEvents[0].home && nowEvents[0].away ? `${nowEvents[0].home.name} v ${nowEvents[0].away.name}` : `${nowEvents.length} events are live now`;
   return {
