@@ -12,8 +12,6 @@ export async function GET() {
     supabase: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     footballData: Boolean(process.env.FOOTBALL_DATA_API_TOKEN),
     siteUrl: Boolean(process.env.NEXT_PUBLIC_SITE_URL),
-    sportsBrainUrl: Boolean(process.env.SPORTS_BRAIN_URL),
-    sportsBrainCronSecret: Boolean(process.env.SPORTS_BRAIN_CRON_SECRET),
   };
 
   const supabase = getSupabaseServerClient();
