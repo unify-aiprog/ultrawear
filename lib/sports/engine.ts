@@ -1,5 +1,5 @@
 import { getSupabaseServerClient } from '@/lib/supabase';
-import { buildSportsProgramme } from '@/lib/sports/programme';
+import { buildSportsProgramme, type SportsProgramme } from '@/lib/sports/programme';
 import { sportsProviders } from '@/lib/sports/providers';
 import type { NormalizedSportsEvent, ProviderHealth, SportSlug } from '@/lib/sports/types';
 
@@ -47,15 +47,15 @@ export async function refreshSportsBrain() {
   return { programme, events: deduped.length, providers: health };
 }
 
-export async function getStoredProgramme() {
+export async function getStoredProgramme(): Promise<{ programme: SportsProgramme; sourceHealth: unknown; updatedAt: string } | null> {
   const supabase = getSupabaseServerClient();
   if (!supabase) return null;
   const { data, error } = await supabase.from('sports_brain_programme_state').select('programme,source_health,updated_at').eq('id', 'global').maybeSingle();
   if (error || !data?.programme) return null;
-  return { programme: data.programme as ReturnType<typeof buildSportsProgramme>, sourceHealth: data.source_health, updatedAt: data.updated_at };
+  return { programme: data.programme as SportsProgramme, sourceHealth: data.source_health, updatedAt: data.updated_at };
 }
 
-export async function getSportProgramme(sport: SportSlug) {
+export async function getSportProgramme(sport: SportSlug): Promise<SportsProgramme> {
   const supabase = getSupabaseServerClient();
   if (!supabase) return buildSportsProgramme([], sport);
   const horizon = new Date(Date.now() + HORIZON_HOURS * 3_600_000).toISOString();
