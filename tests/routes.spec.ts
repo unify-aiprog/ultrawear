@@ -38,6 +38,23 @@ test('API health endpoint returns a machine-readable health state', async ({ req
   expect(body.checkedAt).toBeTruthy();
 });
 
+test('Sports Brain health endpoint is explicit about freshness', async ({ request }) => {
+  const response = await request.get('/api/health/sports-brain');
+  expect([200, 503]).toContain(response.status());
+  const body = await response.json();
+  expect(typeof body.ok).toBe('boolean');
+  expect(['healthy', 'degraded', 'down']).toContain(body.status);
+  expect(body.checkedAt).toBeTruthy();
+});
+
+test('Sports Brain refresh endpoint rejects unauthenticated requests', async ({ request }) => {
+  const response = await request.post('/api/sports-brain/refresh');
+  expect(response.status()).toBe(401);
+  const body = await response.json();
+  expect(body.ok).toBe(false);
+  expect(body.error).toBe('Unauthorized');
+});
+
 test('weekend sports readiness endpoint is explicit about readiness', async ({ request }) => {
   const response = await request.get('/api/health/sports-action');
   expect([200, 503]).toContain(response.status());
