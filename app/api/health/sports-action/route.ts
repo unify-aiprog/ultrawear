@@ -39,7 +39,13 @@ export async function GET() {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
-    return NextResponse.json({ ok: false, status: 'down', checkedAt: checkedAt.toISOString() }, { status: 503 });
+    return NextResponse.json({
+      ok: false,
+      status: 'down',
+      checkedAt: checkedAt.toISOString(),
+      missingSports: [...SPORTS],
+      compliance: { violations: 0, canonicalStatuses: [...CANONICAL_STATUSES] },
+    }, { status: 503 });
   }
 
   const queryStarted = performance.now();
@@ -61,6 +67,8 @@ export async function GET() {
       checkedAt: checkedAt.toISOString(),
       weekend: { start: start.toISOString(), end: end.toISOString() },
       queryMs,
+      missingSports: [...SPORTS],
+      compliance: { violations: 0, canonicalStatuses: [...CANONICAL_STATUSES] },
       error: sportsResult.error?.message ?? eventsResult.error?.message ?? 'Weekend readiness query failed',
     }, { status: 503 });
   }
