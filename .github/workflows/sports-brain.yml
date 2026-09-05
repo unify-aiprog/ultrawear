@@ -12,7 +12,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     steps:
       - name: Refresh programme state
         env:
@@ -22,7 +22,7 @@ jobs:
           set -euo pipefail
           test -n "$SPORTS_BRAIN_URL"
           test -n "$SPORTS_BRAIN_CRON_SECRET"
-          curl --fail-with-body --silent --show-error --max-time 90 --retry 2 --retry-delay 3 \
+          curl --fail-with-body --silent --show-error --max-time 180 --retry 2 --retry-delay 3 \
             -X POST "$SPORTS_BRAIN_URL/api/sports-brain/refresh" \
             -H "Authorization: Bearer $SPORTS_BRAIN_CRON_SECRET" \
             -H "Content-Type: application/json"
