@@ -8,98 +8,49 @@ import Lenis from 'lenis';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const collection = [
-  ['01', 'CORE', 'THE EVERYDAY JERSEY', '01'],
-  ['02', 'TRAINING', 'MADE TO MOVE', '02'],
-  ['03', 'EVERYDAY', 'OFF-PITCH UNIFORM', '03'],
-  ['04', 'COMMUNITY', 'WEAR THE MESSAGE', '04'],
-];
+const sports = [['01','Football'],['02','Basketball'],['03','Tennis'],['04','Running'],['05','More sports']];
+const stories = [['FOR COMMUNITY','Why the next generation of sport belongs to the community.','UW'],['THE GAME','The weekend, decoded.','FC'],['PEOPLE','Built by fans. Made for everyone.','FC']];
+const news = [['THE CULTURE','The game is bigger than the score.'],['THE KIT','Built for movement. Made for more.'],['THE WEEKEND','Five things worth knowing.']];
+const Arrow = () => <span aria-hidden="true">↗</span>;
+
+const styles = `
+.uw-home{--paper:#efede6;--ink:#111110;--muted:#77766f;--line:#c8c6bd;--acid:#d7ff32;background:var(--paper);color:var(--ink);overflow:clip;font-family:Arial,Helvetica,sans-serif}.uw-home *{box-sizing:border-box}.uw-home a{color:inherit;text-decoration:none}.uw-eyebrow{margin:0;font:700 7px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.18em;text-transform:uppercase}.uw-header{position:absolute;z-index:20;top:0;left:0;right:0;height:58px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 30px;border-bottom:1px solid rgba(17,17,16,.16);font:700 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase}.uw-logo{font-size:13px;letter-spacing:-.04em}.uw-logo b{font-size:9px}.uw-header nav{display:flex;height:100%;align-items:center}.uw-header nav a{padding:0 22px;opacity:.7}.uw-header nav a:hover{opacity:1}.uw-header__shop{justify-self:end}.uw-header__shop span,.uw-button span{font-size:12px;margin-left:8px}.uw-hero{position:relative;min-height:605px;padding:92px 6.5% 52px;display:flex;align-items:center;overflow:hidden;border-bottom:1px solid var(--line)}.uw-hero__inner{position:relative;z-index:2;width:52%;max-width:560px}.uw-hero h1{margin:18px 0;font-size:clamp(5rem,11vw,9.2rem);line-height:.78;letter-spacing:-.095em;text-transform:uppercase}.uw-hero__title-line{display:block;overflow:hidden}.uw-outline{color:transparent;-webkit-text-stroke:1px var(--ink)}.uw-hero__copy{max-width:380px;margin:0 0 20px;font-size:10px;line-height:1.45;color:#5f5e58}.uw-hero__actions{display:flex;gap:6px}.uw-button{display:inline-flex;align-items:center;padding:10px 14px;border:1px solid var(--ink);font:800 7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase}.uw-button--dark{background:var(--ink);color:var(--paper)}.uw-button--lime{background:var(--acid);border-color:var(--acid)}.uw-hero__orb{position:absolute;z-index:1;right:10%;top:17%;width:190px;aspect-ratio:1;border-radius:50%;background:var(--ink);display:grid;place-items:center;box-shadow:0 0 0 1px var(--paper),0 0 0 42px rgba(17,17,16,.04)}.uw-hero__orb:before,.uw-hero__orb:after{content:"";position:absolute;border:1px solid rgba(17,17,16,.5);border-radius:50%;width:135%;height:72%;transform:rotate(28deg)}.uw-hero__orb:after{width:128%;height:82%;transform:rotate(-26deg)}.uw-hero__orb b{width:66px;height:66px;border:1px solid var(--acid);border-radius:50%;display:grid;place-items:center;color:var(--acid);font-size:12px}.uw-hero__orb small{position:absolute;top:57%;font:600 4px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;color:var(--acid)}.uw-section-nav{height:25px;display:grid;grid-template-columns:repeat(7,1fr);background:var(--acid);border-bottom:1px solid var(--ink);position:sticky;top:0;z-index:15}.uw-section-nav a{display:grid;place-items:center;border-right:1px solid rgba(17,17,16,.35);font:700 5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase}.uw-happening,.uw-live,.uw-sports,.uw-culture{padding:74px 6.5%;border-bottom:1px solid var(--line)}.uw-section-intro{position:relative;margin-bottom:42px}.uw-section-intro h2{margin:12px 0 0;font-size:clamp(3.6rem,7vw,6.7rem);line-height:.78;letter-spacing:-.085em;text-transform:uppercase}.uw-section-intro h2 span,.uw-culture-copy h2 span{color:transparent;-webkit-text-stroke:1px var(--ink)}.uw-section-intro a{position:absolute;right:0;bottom:4px;font:800 6px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase}.uw-feature-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:12px}.uw-signal-card{min-height:220px;padding:18px;background:var(--ink);color:var(--paper);display:flex;flex-direction:column;justify-content:space-between}.uw-signal-card p,.uw-news-feature p{margin:0;font:700 6px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em}.uw-signal-card p span{float:right;color:#aaa}.uw-signal-card strong{font-size:42px;letter-spacing:-.06em}.uw-signal-card small{font-size:6px}.uw-news-feature{border:1px solid var(--line);padding:10px;background:#e5e2d9}.uw-news-art{height:150px;background:#c8c5bd;position:relative;overflow:hidden;margin-bottom:10px}.uw-news-art:before,.uw-news-art:after{content:"";position:absolute;border-radius:50%;background:#777}.uw-news-art:before{width:52px;height:52px;left:25%;top:30%}.uw-news-art:after{width:70px;height:70px;right:20%;top:18%}.uw-news-art i{position:absolute;bottom:-35px;left:25%;width:55%;height:80px;background:#171716;border-radius:50%}.uw-news-art span,.uw-news-card__art span,.uw-story-art span{position:absolute;z-index:2;top:8px;left:8px;font:700 6px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.uw-news-feature h3{margin:6px 0 5px;font-size:22px;letter-spacing:-.04em}.uw-live-note{margin:-18px 0 18px;font:600 5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;color:#5a5a5a}.uw-live-note b{display:inline-block;width:4px;height:4px;border-radius:50%;background:#ff4c35;margin-right:7px}.uw-news-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.uw-news-card{border:1px solid var(--line);padding:7px;background:#f3f1eb}.uw-news-card__art{height:105px;position:relative;overflow:hidden;background:#d1cfc7}.uw-news-card__art:before{content:"";position:absolute;width:45px;height:45px;border-radius:50%;background:#777;top:18px;left:25%}.uw-news-card__art:after{content:"";position:absolute;width:100px;height:65px;border-radius:50%;background:#171716;bottom:-28px;left:18%}.uw-news-card__art--2{background:#252521}.uw-news-card__art--2:before{width:150%;height:5px;transform:rotate(-25deg);top:52px;left:-20%;border-radius:0;background:#ddd}.uw-news-card__art--3:before{background:transparent;border:2px solid #777}.uw-news-card small,.uw-story-card small{display:block;margin-top:8px;font:700 5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em}.uw-news-card h3,.uw-story-card h3{margin:5px 0 3px;font-size:16px;line-height:.95;letter-spacing:-.035em}.uw-news-card p,.uw-story-card p{margin:0;font-size:6px;line-height:1.35;color:#5a5a5a}.uw-sport-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}.uw-sport-tile{min-height:105px;border:1px solid #96958e;padding:10px;display:flex;flex-direction:column;justify-content:space-between;background:#ddd9d0}.uw-sport-tile:nth-child(4),.uw-sport-tile:nth-child(5){grid-column:span 3}.uw-sport-tile.is-accent{background:var(--acid);border-color:var(--ink)}.uw-sport-tile small{font:700 5px/1 ui-monospace,SFMono-Regular,Menlo,monospace}.uw-sport-tile strong{font-size:18px;letter-spacing:-.04em}.uw-sport-tile>span{align-self:flex-end;font-size:11px}.uw-story-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:8px}.uw-story-card{display:block}.uw-story-art{height:210px;position:relative;overflow:hidden;background:#1a1a18;color:#eee}.uw-story-art:before,.uw-story-art:after{content:"";position:absolute;border-radius:50%;background:#7e7e7a}.uw-story-art:before{width:80px;height:80px;top:20px;left:25%}.uw-story-art:after{width:150px;height:90px;bottom:-35px;left:15%;background:#090909}.uw-story-art b{position:absolute;z-index:2;inset:0;display:grid;place-items:center;font-size:60px;color:var(--acid);letter-spacing:-.1em}.art-2{background:#34342f}.art-2:before{width:140%;height:5px;left:-20%;top:50%;transform:rotate(-24deg);border-radius:0;background:#ddd}.art-3:before{background:transparent;border:1px solid #aaa}.uw-community{min-height:430px;position:relative;display:flex;align-items:center;overflow:hidden;background:var(--ink);color:var(--paper)}.uw-community__fc{position:absolute;left:5%;font-size:250px;line-height:.7;font-weight:900;letter-spacing:-.15em;color:#262623;transform:rotate(-7deg)}.uw-community__content{position:relative;z-index:2;margin-left:38%;max-width:460px;padding:75px 0}.uw-community h2{margin:12px 0 14px;font-size:clamp(3.4rem,7vw,6.8rem);line-height:.76;letter-spacing:-.08em}.uw-community h2 span{color:var(--acid)}.uw-community__content>p:not(.uw-eyebrow){max-width:310px;margin:0 0 18px;font-size:8px;line-height:1.5;color:#aaa}.uw-culture-block{min-height:420px;padding:75px 6.5%;display:grid;grid-template-columns:1fr 1fr;gap:8%;align-items:center;border-bottom:1px solid var(--line)}.uw-culture-copy h2{margin:12px 0;font-size:clamp(4rem,8vw,7.5rem);line-height:.78;letter-spacing:-.09em}.uw-culture-copy>p:not(.uw-eyebrow){max-width:330px;font-size:9px;line-height:1.45;color:#5a5a5a}.uw-culture-copy>a{font:800 7px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase}.uw-culture__card--accent{justify-self:end;width:min(340px,85%);aspect-ratio:1.15;background:var(--acid);padding:14px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--ink);transform:rotate(2deg)}.uw-culture__card--accent small,.uw-culture__card--accent span{font:700 6px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em}.uw-culture__card--accent strong{font-size:100px;line-height:.75;letter-spacing:-.09em}.uw-footer{background:#0e0e0d;color:var(--paper);padding:28px 6.5%;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:end;min-height:105px}.uw-footer__brand{font-size:12px;font-weight:900;letter-spacing:-.04em}.uw-footer__brand b{font-size:8px}.uw-footer__brand small{display:block;margin-top:12px;font:500 5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;opacity:.5}.uw-footer>p{justify-self:center;font:500 5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;opacity:.5}.uw-footer nav{justify-self:end;display:flex;gap:15px;font:700 5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase}.uw-home main{display:block}body:has(.uw-home) .site-header{display:none}
+@media(max-width:800px){.uw-header{position:absolute;grid-template-columns:1fr auto;padding:0 18px}.uw-header nav{display:none}.uw-hero{min-height:670px;padding:100px 22px 60px;align-items:flex-end}.uw-hero__inner{width:100%}.uw-hero h1{font-size:clamp(5rem,24vw,8rem)}.uw-hero__orb{width:145px;right:8%;top:18%}.uw-section-nav{grid-template-columns:repeat(4,1fr);height:auto}.uw-section-nav a{padding:7px 3px}.uw-section-nav a:nth-child(n+5){display:none}.uw-happening,.uw-live,.uw-sports,.uw-culture{padding:70px 22px}.uw-section-intro h2{font-size:clamp(3.5rem,17vw,6.5rem)}.uw-section-intro a{position:static;display:block;margin-top:15px}.uw-feature-grid,.uw-story-grid{grid-template-columns:1fr}.uw-news-art{height:190px}.uw-news-row{grid-template-columns:1fr}.uw-news-card__art{height:180px}.uw-sport-grid{grid-template-columns:1fr 1fr}.uw-sport-tile,.uw-sport-tile:nth-child(4),.uw-sport-tile:nth-child(5){grid-column:auto;min-height:135px}.uw-story-art{height:230px}.uw-community{min-height:560px}.uw-community__fc{left:-8%;font-size:230px}.uw-community__content{margin:0;padding:70px 22px;align-self:flex-end}.uw-culture-block{min-height:650px;padding:70px 22px;grid-template-columns:1fr;align-content:center}.uw-culture__card--accent{justify-self:center;width:78%}.uw-footer{grid-template-columns:1fr;gap:20px;padding:26px 22px}.uw-footer>p{justify-self:start}.uw-footer nav{justify-self:start;flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.uw-home *{scroll-behavior:auto!important}.uw-culture__card--accent{transform:none!important}}
+`;
 
 export function PremiumHome() {
   const root = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    const lenis = new Lenis({ autoRaf: false, smoothWheel: true, syncTouch: false });
-    const onScroll = () => ScrollTrigger.update();
-    const onTick = (time: number) => lenis.raf(time * 1000);
-    lenis.on('scroll', onScroll);
-    gsap.ticker.add(onTick);
-    gsap.ticker.lagSmoothing(0);
-
+    const lenis = new Lenis({ autoRaf:false, smoothWheel:true, syncTouch:false });
+    const raf = (time:number) => lenis.raf(time * 1000);
+    const scroll = () => ScrollTrigger.update();
+    lenis.on('scroll', scroll); gsap.ticker.add(raf); gsap.ticker.lagSmoothing(0);
     const ctx = gsap.context(() => {
-      const mm = gsap.matchMedia();
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (!reduced) {
-        gsap.from('.premium-hero__kicker, .premium-hero__line', { yPercent: 110, opacity: 0, duration: 1.1, ease: 'power4.out', stagger: 0.07, delay: 0.15 });
-        gsap.from('.premium-hero__cta', { y: 20, opacity: 0, duration: 0.8, delay: 0.75, ease: 'power3.out' });
-        gsap.utils.toArray<HTMLElement>('[data-reveal]').forEach((el) => {
-          gsap.from(el, { y: 60, opacity: 0, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 82%', once: true } });
-        });
-        gsap.to('.premium-editorial__orb', { yPercent: -16, scrollTrigger: { trigger: '.premium-editorial', scrub: 1 } });
-        gsap.to('.premium-fc__mark', { scale: 15, ease: 'none', scrollTrigger: { trigger: '.premium-fc', start: 'top top', end: '+=1400', scrub: 1, pin: true } });
-        gsap.from('.premium-fc__words span', { yPercent: 120, opacity: 0, stagger: 0.08, scrollTrigger: { trigger: '.premium-fc', start: 'top 65%', once: true } });
-      }
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      gsap.from('.uw-hero__eyebrow,.uw-hero__title-line',{yPercent:115,opacity:0,duration:1,ease:'power4.out',stagger:.08});
+      gsap.from('.uw-hero__copy,.uw-hero__actions',{y:24,opacity:0,duration:.8,stagger:.1,delay:.55});
+      gsap.to('.uw-hero__orb',{yPercent:18,rotate:8,scrollTrigger:{trigger:'.uw-hero',start:'top top',end:'bottom top',scrub:1}});
+      gsap.utils.toArray<HTMLElement>('.uw-reveal').forEach(el=>gsap.from(el,{y:50,opacity:0,duration:.85,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 84%',once:true}}));
+      gsap.to('.uw-community__fc',{xPercent:12,scrollTrigger:{trigger:'.uw-community',start:'top bottom',end:'bottom top',scrub:1}});
+      gsap.from('.uw-culture__card--accent',{rotate:-5,y:50,scrollTrigger:{trigger:'.uw-culture-block',start:'top 70%',end:'top 25%',scrub:1}});
+    },root);
+    return () => { ctx.revert(); lenis.off('scroll',scroll); gsap.ticker.remove(raf); lenis.destroy(); };
+  },[]);
 
-      mm.add('(min-width: 768px)', () => {
-        const track = document.querySelector<HTMLElement>('.premium-collection__track');
-        const section = document.querySelector<HTMLElement>('.premium-collection');
-        if (!track || !section || reduced) return;
-        const tween = gsap.to(track, { x: () => -(track.scrollWidth - window.innerWidth), ease: 'none', scrollTrigger: { trigger: section, start: 'top top', end: () => `+=${track.scrollWidth - window.innerWidth}`, scrub: 1, pin: true, invalidateOnRefresh: true } });
-        return () => tween.kill();
-      });
-
-      return () => mm.revert();
-    }, root);
-
-    return () => {
-      ctx.revert();
-      lenis.off('scroll', onScroll);
-      gsap.ticker.remove(onTick);
-      lenis.destroy();
-    };
-  }, []);
-
-  return (
-    <div ref={root} className="premium-home">
-      <header className="premium-nav">
-        <Link href="/" className="premium-nav__brand" aria-label="UltraWear FC home">ULTRAWEAR <b>FC</b></Link>
-        <nav aria-label="Primary"><a href="#collection">SHOP</a><a href="#community">COMMUNITY</a><a href="#culture">CULTURE</a></nav>
-        <a className="premium-nav__menu" href="#footer">MENU <span>↗</span></a>
-      </header>
-
-      <section className="premium-hero">
-        <div className="premium-hero__media" aria-hidden="true"><div className="premium-hero__shape premium-hero__shape--a" /><div className="premium-hero__shape premium-hero__shape--b" /><div className="premium-hero__grain" /></div>
-        <div className="premium-hero__content">
-          <p className="premium-hero__kicker">FC / FOR COMMUNITY / 2026</p>
-          <h1 className="premium-hero__title"><span className="premium-hero__line">THE GAME</span><span className="premium-hero__line">IS BIGGER</span><span className="premium-hero__line"><em>THAN THE GAME.</em></span></h1>
-          <p className="premium-hero__sub">Sportswear for the movement around sport. Football is the beginning. Community is the destination.</p>
-          <a className="premium-hero__cta" href="#collection">SHOP THE DROP <span>↗</span></a>
-        </div>
-        <div className="premium-hero__scroll">SCROLL TO MOVE <span>↓</span></div>
-      </section>
-
-      <section className="premium-manifesto" id="community">
-        <p className="premium-label" data-reveal>01 / THE MANIFESTO</p>
-        <h2 data-reveal>WE DON&apos;T JUST<br />MAKE SPORTSWEAR.<br /><em>WE MAKE BELONGING.</em></h2>
-        <p className="premium-copy" data-reveal>Every match has a world around it. The streets, the music, the rituals, the people. UltraWear FC exists for that world — and everyone who moves through it.</p>
-      </section>
-
-      <section className="premium-collection" id="collection">
-        <div className="premium-collection__intro"><p className="premium-label">02 / FEATURED COLLECTION</p><h2>BUILT FOR<br /><em>THE MOVEMENT.</em></h2></div>
-        <div className="premium-collection__track">{collection.map(([num, tag, title, ghost]) => <article className="premium-product" key={num}><div className="premium-product__visual"><span>{ghost}</span><i /></div><div className="premium-product__meta"><small>{num} / {tag}</small><h3>{title}</h3><b>EXPLORE ↗</b></div></article>)}</div>
-      </section>
-
-      <section className="premium-editorial" id="culture"><div className="premium-editorial__orb" /><div className="premium-editorial__copy"><p className="premium-label">03 / EDITORIAL</p><h2>ENGINEERED<br /><em>FOR MOVEMENT.</em></h2><p className="premium-copy">Performance language. Street attitude. Designed to live between training, culture and everything after.</p><a href="/about">READ THE STORY ↗</a></div></section>
-
-      <section className="premium-fc"><div className="premium-fc__mark">FC</div><div className="premium-fc__words"><span>FOR</span><span>COMMUNITY.</span></div></section>
-
-      <section className="premium-culture"><div className="premium-section-head"><p className="premium-label">05 / CULTURE</p><h2>MORE THAN<br /><em>A MATCH.</em></h2></div><div className="premium-culture__grid">{['TRAINING', 'MUSIC', 'CULTURE', 'COMMUNITY'].map((item, i) => <a href="/sports" className={`premium-culture__card premium-culture__card--${i + 1}`} key={item}><span>0{i + 1}</span><strong>{item}</strong><i>↗</i></a>)}</div></section>
-
-      <section className="premium-stories"><p className="premium-label">06 / COMMUNITY STORIES</p><div className="premium-stories__list">{['THE PLAYER', 'THE CREATOR', 'THE COACH', 'THE COMMUNITY'].map((item, i) => <a href="/about" key={item}><span>0{i + 1}</span><b>{item}</b><i>↗</i></a>)}</div></section>
-
-      <section className="premium-cta"><p className="premium-label">07 / LATEST DROP</p><h2>READY<br /><em>TO MOVE?</em></h2><a href="#collection">SHOP ULTRAWEAR FC ↗</a></section>
-
-      <footer className="premium-footer" id="footer"><div><div className="premium-footer__brand">ULTRAWEAR <b>FC</b></div><p>FOR COMMUNITY.</p></div><div className="premium-footer__links"><a href="/shop">SHOP</a><a href="/about">ABOUT</a><a href="/contact">CONTACT</a><a href="/privacy">PRIVACY</a></div><small>© 2026 ULTRAWEAR FC / BUILT FOR THE CULTURE.</small></footer>
-    </div>
-  );
+  return <div ref={root} className="uw-home">
+    <style dangerouslySetInnerHTML={{__html:styles}} />
+    <header className="uw-header"><Link className="uw-logo" href="/">ULTRAWEAR <b>FC</b></Link><nav><a href="#happening">Football</a><a href="#community">Community</a><a href="#culture">Culture</a><a href="#sports">Sports</a><a href="#community">Forward</a></nav><Link className="uw-header__shop" href="/shop">Shop <Arrow /></Link></header>
+    <section className="uw-hero"><div className="uw-hero__orb" aria-hidden="true"><b>FC</b><small>FOR COMMUNITY</small></div><div className="uw-hero__inner"><p className="uw-eyebrow uw-hero__eyebrow">THE NEW SPORTS CULTURE</p><h1><span className="uw-hero__title-line">PLAY</span><span className="uw-hero__title-line uw-outline">FOR</span><span className="uw-hero__title-line">MORE.</span></h1><p className="uw-hero__copy">Sport is bigger than the score. UltraWear FC connects the game, the culture and the people around it.</p><div className="uw-hero__actions"><Link className="uw-button uw-button--dark" href="/shop">ENTER THE GAME <Arrow /></Link><a className="uw-button" href="#community">JOIN THE COMMUNITY</a></div></div></section>
+    <div className="uw-section-nav"><a href="#happening">Football</a><a href="#community">Community</a><a href="#culture">Culture</a><a href="#sports">Sports</a><a href="#community">Forward</a><a href="/fixtures">Football</a><a href="/live">Community</a></div>
+    <main>
+      <section className="uw-happening" id="happening"><div className="uw-section-intro uw-reveal"><p className="uw-eyebrow">COMMUNITY SIGNAL</p><h2>WHAT&apos;S <span>HAPPENING.</span></h2><Link href="/news">EXPLORE THE FEED <Arrow /></Link></div><div className="uw-feature-grid"><article className="uw-signal-card uw-reveal"><p>TRAINING <span>COMMUNITY SIGNAL</span></p><strong>Building the signal.</strong><small>A people-powered sports platform for everyone who lives for sport.</small></article><article className="uw-news-feature uw-reveal"><div className="uw-news-art"><span>THE FEED</span><i /></div><div><p>CULTURE</p><h3>The game is bigger than the score.</h3><small>Sport is community. Built around it.</small></div></article></div></section>
+      <section className="uw-live uw-reveal"><div className="uw-section-intro"><p className="uw-eyebrow">RIGHT NOW</p><h2>LIVE <span>SPORT.</span></h2><Link href="/live">VIEW LIVE SPORT <Arrow /></Link></div><p className="uw-live-note"><b /> VERIFIED DATA AVAILABLE · VERIFIED FEEDS WILL DRIVE THESE CARDS. THIS PREVIEW NEVER INVENTS RESULTS.</p><div className="uw-news-row">{news.map(([tag,title],i)=><Link className="uw-news-card" href="/news" key={tag}><div className={`uw-news-card__art uw-news-card__art--${i+1}`}><span>0{i+1}</span></div><small>{tag}</small><h3>{title}</h3><p>News, people and culture around the game.</p></Link>)}</div></section>
+      <section className="uw-sports" id="sports"><div className="uw-section-intro uw-reveal"><p className="uw-eyebrow">YOUR WORLD OF SPORT</p><h2>CHOOSE <span>YOUR GAME.</span></h2><Link href="/sports">ALL SPORTS <Arrow /></Link></div><div className="uw-sport-grid">{sports.map(([num,label],i)=><Link className={`uw-sport-tile ${i===4?'is-accent':''}`} href="/sports" key={num}><small>{num}</small><strong>{label}</strong><Arrow /></Link>)}</div></section>
+      <section className="uw-culture" id="culture"><div className="uw-section-intro uw-reveal"><p className="uw-eyebrow">THE FEED</p><h2>SPORT.<br/><span>UNFILTERED.</span></h2><Link href="/news">ALL STORIES <Arrow /></Link></div><div className="uw-story-grid">{stories.map(([tag,title,mark],i)=><Link className="uw-story-card uw-reveal" href="/news" key={tag}><div className={`uw-story-art art-${i+1}`}><span>{tag}</span><b>{mark}</b></div><small>{tag}</small><h3>{title}</h3><p>News, people and culture around the game.</p></Link>)}</div></section>
+      <section className="uw-community" id="community"><div className="uw-community__fc" aria-hidden="true">FC</div><div className="uw-community__content uw-reveal"><p className="uw-eyebrow">THIS IS THE POINT</p><h2>FC MEANS<br/><span>FOR<br/>COMMUNITY.</span></h2><p>We believe sport is a shared language. A shirt, a match, a run, a conversation — every part of it brings people together.</p><Link className="uw-button uw-button--lime" href="/about">BE PART OF IT <Arrow /></Link></div></section>
+      <section className="uw-culture-block"><div className="uw-culture-copy uw-reveal"><p className="uw-eyebrow">COMING SOON</p><h2>THE <span>CULTURE.</span></h2><p>Football-inspired today. Sports and lifestyle tomorrow. UltraWear FC is just getting started.</p><Link href="/about">EXPLORE ULTRAWEAR <Arrow /></Link></div><div className="uw-culture__card--accent"><small>FOR COMMUNITY</small><strong>WEAR</strong><span>FC · FOR COMMUNITY</span></div></section>
+    </main>
+    <footer className="uw-footer"><div className="uw-footer__brand">ULTRAWEAR <b>FC</b><small>© 2026 UltraWear FC. Built for the culture.</small></div><p>FC = FOR COMMUNITY.</p><nav><Link href="/shop">Shop</Link><Link href="/about">About</Link><Link href="/contact">Contact</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav></footer>
+  </div>;
 }
