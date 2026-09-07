@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { loadSportsIdentity, saveSportsIdentity, toggleInterest, follow, type SportsIdentity, type SportsInterest } from '@/lib/identity/sports-identity';
+import { loadSportsIdentity, saveSportsIdentity, toggleInterest, follow, type SportsIdentity as SportsIdentityData, type SportsInterest } from '@/lib/identity/sports-identity';
 import { trackAudienceEvent } from '@/lib/analytics/audience-events';
 
 const interests: SportsInterest[] = ['football', 'basketball', 'athletics', 'tennis', 'motorsport', 'womens-sport', 'emerging-sport'];
@@ -14,9 +14,9 @@ const discovery = [
 ];
 
 export function SportsIdentity() {
-  const [identity, setIdentity] = useState<SportsIdentity>(() => loadSportsIdentity());
+  const [identity, setIdentity] = useState<SportsIdentityData>(() => loadSportsIdentity());
   const [editing, setEditing] = useState(false);
-  const update = (next: SportsIdentity) => { setIdentity(next); saveSportsIdentity(next); };
+  const update = (next: SportsIdentityData) => { setIdentity(next); saveSportsIdentity(next); };
   const followCollection = (kind: 'team' | 'athlete' | 'community') => kind === 'team' ? 'followedTeams' : kind === 'athlete' ? 'followedAthletes' : 'followedCommunities';
   return <section className="uw-identity" aria-labelledby="identity-title">
     <div className="uw-identity__hero"><div><p className="uw-eyebrow">SPORTS IDENTITY</p><h2 id="identity-title">YOUR <span>SPORTS WORLD</span></h2><p>Choose what matters to you. UltraWear uses your signals to shape discovery, live moments and community.</p></div><div className="uw-identity__badge"><b>LVL {identity.level}</b><span>{identity.xp} XP</span><small>{identity.badges.length} BADGES</small></div></div>
