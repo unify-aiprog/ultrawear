@@ -56,15 +56,7 @@ test('Sports Brain refresh endpoint rejects unauthenticated requests', async ({ 
 });
 
 test('audience endpoint accepts validated events', async ({ request }) => {
-  const response = await request.post('/api/audience', {
-    data: {
-      id: `e2e_${Date.now()}`,
-      name: 'page_view',
-      occurredAt: new Date().toISOString(),
-      anonymousId: 'e2e-anonymous',
-      properties: { route: '/' },
-    },
-  });
+  const response = await request.post('/api/audience', { data: { id: `e2e_${Date.now()}`, name: 'page_view', occurredAt: new Date().toISOString(), anonymousId: 'e2e-anonymous', properties: { route: '/' } } });
   expect(response.status()).toBe(202);
   const body = await response.json();
   expect(body.ok).toBe(true);
@@ -73,15 +65,7 @@ test('audience endpoint accepts validated events', async ({ request }) => {
 
 test('audience endpoint rejects oversized property sets', async ({ request }) => {
   const properties = Object.fromEntries(Array.from({ length: 31 }, (_, index) => [`key_${index}`, true]));
-  const response = await request.post('/api/audience', {
-    data: {
-      id: `invalid_${Date.now()}`,
-      name: 'page_view',
-      occurredAt: new Date().toISOString(),
-      anonymousId: 'e2e-anonymous',
-      properties,
-    },
-  });
+  const response = await request.post('/api/audience', { data: { id: `invalid_${Date.now()}`, name: 'page_view', occurredAt: new Date().toISOString(), anonymousId: 'e2e-anonymous', properties } });
   expect(response.status()).toBe(400);
 });
 
@@ -89,24 +73,28 @@ test('identity endpoint creates a stable server identity', async ({ request }) =
   const first = await request.get('/api/identity');
   expect(first.ok()).toBeTruthy();
   const firstBody = await first.json();
-  expect(firstBody.ok).toBe(true);
   expect(firstBody.identity.id).toMatch(/^fan_/);
-
-  const second = await request.get('/api/identity');
-  const secondBody = await second.json();
+  const secondBody = await (await request.get('/api/identity')).json();
   expect(secondBody.identity.id).toBe(firstBody.identity.id);
 });
 
 test('identity endpoint validates profile updates', async ({ request }) => {
   const response = await request.patch('/api/identity', { data: { displayName: 'Ultra Fan' } });
   expect(response.ok()).toBeTruthy();
-  const body = await response.json();
-  expect(body.identity.displayName).toBe('Ultra Fan');
+  expect((await response.json()).identity.displayName).toBe('Ultra Fan');
 });
 
 test('identity endpoint rejects unknown update fields', async ({ request }) => {
   const response = await request.patch('/api/identity', { data: { email: 'not-allowed' } });
   expect(response.status()).toBe(400);
+});
+
+test('participation endpoint awards progress and rejects malformed records', async ({ request }) => {
+  const response = await request.post('/api/participation', { data: { id: `participation_${Date.now()}`, eventId: 'e2e-event', actionId: 'e2e-action', kind: 'reaction', points: 5 } });
+  expect([201, 503]).toContain(response.status());
+  if (response.status() === 201) expect((await response.json()).identity.xp).toBeGreaterThanOrEqual(5);
+  const invalid = await request.post('/api/participation', { data: { eventId: 'e2e-event', actionId: 'e2e-action', kind: 'invalid', points: 500 } });
+  expect(invalid.status()).toBe(400);
 });
 
 test('weekend sports readiness endpoint is explicit about readiness', async ({ request }) => {

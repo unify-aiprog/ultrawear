@@ -10,6 +10,9 @@ export type SportsIdentity = {
   followedCommunities: string[];
   xp: number;
   level: number;
+  streak: number;
+  participations: number;
+  lastParticipationAt?: string;
   badges: string[];
   createdAt: string;
 };
@@ -28,6 +31,8 @@ export function createSportsIdentity(): SportsIdentity {
     followedCommunities: [],
     xp: 0,
     level: 1,
+    streak: 0,
+    participations: 0,
     badges: ['FIRST SIGNAL'],
     createdAt: new Date().toISOString(),
   };
