@@ -10,7 +10,7 @@ const eventSchema = z.object({
   name: z.enum(['page_view', 'live_view', 'participation', 'quest_accept', 'community_post', 'community_reaction', 'interest_toggle', 'follow_toggle']),
   occurredAt: z.string().datetime(),
   anonymousId: z.string().min(1).max(128),
-  properties: z.record(propertyValue).default({}),
+  properties: z.record(z.string(), propertyValue).default({}),
 }).superRefine((event, ctx) => {
   if (Object.keys(event.properties).length > 30) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Too many event properties', path: ['properties'] });

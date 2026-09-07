@@ -1,6 +1,64 @@
-export type Sport = 'football' | 'basketball' | 'tennis' | 'running' | 'other';
+export type SportSlug = 'football' | 'basketball' | 'tennis' | 'athletics' | 'motorsport';
+export type Sport = SportSlug | 'running' | 'other';
 export type EventType = 'match_started' | 'score_change' | 'match_ended' | 'milestone' | 'fixture' | 'story';
 export type VerificationState = 'verified' | 'unverified' | 'unknown';
+export type NormalizedSportsStatus = 'SCHEDULED' | 'TIMED' | 'IN_PLAY' | 'PAUSED' | 'FINISHED' | 'POSTPONED' | 'SUSPENDED' | 'CANCELLED';
+
+export interface SportsParticipant {
+  id: string;
+  name: string;
+  imageUrl?: string | null;
+  role?: string | null;
+}
+
+export interface EventSignificance {
+  competitionWeight?: number;
+  stageWeight?: number;
+  rivalryWeight?: number;
+  championshipWeight?: number;
+  athleteWeight?: number;
+  audienceWeight?: number;
+  communityWeight?: number;
+}
+
+export interface NormalizedSportsEvent {
+  id: string;
+  sport: SportSlug;
+  startsAt: string;
+  status: NormalizedSportsStatus;
+  competition: string;
+  stage?: string | null;
+  home?: SportsParticipant;
+  away?: SportsParticipant;
+  participants: SportsParticipant[];
+  homeScore?: number | null;
+  awayScore?: number | null;
+  provider: string;
+  providerId: string;
+  updatedAt?: string;
+  significance?: EventSignificance;
+}
+
+export type ProviderHealthStatus = 'healthy' | 'degraded' | 'down' | 'not_configured';
+
+export interface ProviderHealth {
+  provider: string;
+  sport: SportSlug;
+  status: ProviderHealthStatus;
+  checkedAt: string;
+  lastSuccessAt?: string;
+  latencyMs?: number;
+  error?: string;
+}
+
+export interface SportsProvider {
+  name: string;
+  sport: SportSlug;
+  getLiveEvents(): Promise<NormalizedSportsEvent[]>;
+  getUpcomingEvents(from: Date, to: Date): Promise<NormalizedSportsEvent[]>;
+  getRecentEvents(from: Date, to: Date): Promise<NormalizedSportsEvent[]>;
+  getHealth(): Promise<ProviderHealth>;
+}
 
 export interface SportsEvent {
   id: string;
