@@ -2,11 +2,15 @@ import { test, expect } from '@playwright/test';
 import { buildSportsProgramme, programmePriority, scoreEvent } from '@/lib/sports/programme';
 import type { NormalizedSportsEvent } from '@/lib/sports/types';
 
-const event = (overrides: Partial<NormalizedSportsEvent> = {}): NormalizedSportsEvent => ({
-  id: 'test-1', sport: 'football', startsAt: '2026-09-05T20:00:00.000Z', status: 'SCHEDULED', competition: 'Premier League',
-  home: { id: 'a', name: 'Arsenal' }, away: { id: 'b', name: 'Chelsea' }, homeScore: null, awayScore: null,
-  provider: 'test', providerId: '1', ...overrides,
-});
+const event = (overrides: Partial<NormalizedSportsEvent> = {}): NormalizedSportsEvent => {
+  const home = { id: 'a', name: 'Arsenal' };
+  const away = { id: 'b', name: 'Chelsea' };
+  return {
+    id: 'test-1', sport: 'football', startsAt: '2026-09-05T20:00:00.000Z', status: 'SCHEDULED', competition: 'Premier League',
+    home, away, participants: [home, away], homeScore: null, awayScore: null,
+    provider: 'test', providerId: '1', ...overrides,
+  };
+};
 
 test.describe('Sports Brain', () => {
   const now = Date.parse('2026-09-05T12:00:00.000Z');
