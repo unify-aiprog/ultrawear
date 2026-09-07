@@ -55,6 +55,36 @@ test('Sports Brain refresh endpoint rejects unauthenticated requests', async ({ 
   expect(body.error).toBe('Unauthorized');
 });
 
+test('audience endpoint accepts validated events', async ({ request }) => {
+  const response = await request.post('/api/audience', {
+    data: {
+      id: `e2e_${Date.now()}`,
+      name: 'page_view',
+      occurredAt: new Date().toISOString(),
+      anonymousId: 'e2e-anonymous',
+      properties: { route: '/' },
+    },
+  });
+  expect(response.status()).toBe(202);
+  const body = await response.json();
+  expect(body.ok).toBe(true);
+  expect(body.accepted).toBeTruthy();
+});
+
+test('audience endpoint rejects oversized property sets', async ({ request }) => {
+  const properties = Object.fromEntries(Array.from({ length: 31 }, (_, index) => [`key_${index}`, true]));
+  const response = await request.post('/api/audience', {
+    data: {
+      id: `invalid_${Date.now()}`,
+      name: 'page_view',
+      occurredAt: new Date().toISOString(),
+      anonymousId: 'e2e-anonymous',
+      properties,
+    },
+  });
+  expect(response.status()).toBe(400);
+});
+
 test('weekend sports readiness endpoint is explicit about readiness', async ({ request }) => {
   const response = await request.get('/api/health/sports-action');
   expect([200, 503]).toContain(response.status());
