@@ -1,5 +1,5 @@
-export type SportSlug = 'football' | 'basketball' | 'tennis' | 'athletics' | 'motorsport';
-export type Sport = SportSlug | 'running' | 'other';
+export type SportSlug = 'football' | 'basketball' | 'tennis' | 'athletics' | 'motorsport' | 'running' | 'other';
+export type Sport = SportSlug;
 export type EventType = 'match_started' | 'score_change' | 'match_ended' | 'milestone' | 'fixture' | 'story';
 export type VerificationState = 'verified' | 'unverified' | 'unknown';
 export type NormalizedSportsStatus = 'SCHEDULED' | 'TIMED' | 'IN_PLAY' | 'PAUSED' | 'FINISHED' | 'POSTPONED' | 'SUSPENDED' | 'CANCELLED';
@@ -30,7 +30,7 @@ export interface NormalizedSportsEvent {
   stage?: string | null;
   home?: SportsParticipant;
   away?: SportsParticipant;
-  participants: SportsParticipant[];
+  participants?: SportsParticipant[];
   homeScore?: number | null;
   awayScore?: number | null;
   provider: string;
@@ -58,6 +58,10 @@ export interface SportsProvider {
   getUpcomingEvents(from: Date, to: Date): Promise<NormalizedSportsEvent[]>;
   getRecentEvents(from: Date, to: Date): Promise<NormalizedSportsEvent[]>;
   getHealth(): Promise<ProviderHealth>;
+}
+
+export function isSportSlug(value: string): value is SportSlug {
+  return ['football', 'basketball', 'tennis', 'athletics', 'motorsport', 'running', 'other'].includes(value);
 }
 
 export interface SportsEvent {

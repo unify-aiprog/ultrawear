@@ -9,27 +9,11 @@ export async function GET() {
   const stored = await getStoredProgramme();
 
   if (stored?.programme && !isProgrammeStale(stored.updatedAt)) {
-    return NextResponse.json(
-      {
-        generatedAt: stored.updatedAt,
-        mode: 'sports-brain',
-        stale: false,
-        programme: stored.programme,
-      },
-      { headers: { 'Cache-Control': 'no-store' } },
-    );
+    return NextResponse.json({ generatedAt: stored.updatedAt, mode: 'sports-brain', stale: false, programme: stored.programme }, { headers: { 'Cache-Control': 'no-store' } });
   }
 
   if (stored?.programme) {
-    return NextResponse.json(
-      {
-        generatedAt: stored.updatedAt,
-        mode: 'sports-brain-stale',
-        stale: true,
-        programme: stored.programme,
-      },
-      { headers: { 'Cache-Control': 'no-store' } },
-    );
+    return NextResponse.json({ generatedAt: stored.updatedAt, mode: 'sports-brain-stale', stale: true, programme: stored.programme }, { headers: { 'Cache-Control': 'no-store' } });
   }
 
   const experiences = liveExperiences();
@@ -41,8 +25,8 @@ export async function GET() {
       status: experience.event.status === 'live' ? 'IN_PLAY' : 'FINISHED',
       competition: experience.event.competition,
       stage: null,
-      home: experience.event.home ? { name: experience.event.home } : undefined,
-      away: experience.event.away ? { name: experience.event.away } : undefined,
+      home: experience.event.home ? { id: `${experience.event.id}:home`, name: experience.event.home } : undefined,
+      away: experience.event.away ? { id: `${experience.event.id}:away`, name: experience.event.away } : undefined,
       participants: [],
       homeScore: experience.event.homeScore,
       awayScore: experience.event.awayScore,
@@ -53,14 +37,5 @@ export async function GET() {
     'all',
   );
 
-  return NextResponse.json(
-    {
-      generatedAt: new Date().toISOString(),
-      mode: 'simulator-fallback',
-      stale: false,
-      programme,
-      experiences,
-    },
-    { headers: { 'Cache-Control': 'no-store' } },
-  );
+  return NextResponse.json({ generatedAt: new Date().toISOString(), mode: 'simulator-fallback', stale: false, programme, experiences }, { headers: { 'Cache-Control': 'no-store' } });
 }
