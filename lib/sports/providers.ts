@@ -4,6 +4,8 @@ import { listMatches } from '@/lib/providers/football-data';
 const FOOTBALL_PROVIDER = 'football-data.org';
 
 function mapFootballMatch(match: Awaited<ReturnType<typeof listMatches>>['matches'][number]): NormalizedSportsEvent {
+  const home = { id: String(match.homeTeam.id), name: match.homeTeam.name, imageUrl: match.homeTeam.crest ?? null };
+  const away = { id: String(match.awayTeam.id), name: match.awayTeam.name, imageUrl: match.awayTeam.crest ?? null };
   return {
     id: `football-data:event:${match.id}`,
     sport: 'football',
@@ -11,8 +13,9 @@ function mapFootballMatch(match: Awaited<ReturnType<typeof listMatches>>['matche
     status: match.status as NormalizedSportsEvent['status'],
     competition: match.competition.name,
     stage: match.stage ?? match.group ?? null,
-    home: { id: String(match.homeTeam.id), name: match.homeTeam.name, imageUrl: match.homeTeam.crest ?? null },
-    away: { id: String(match.awayTeam.id), name: match.awayTeam.name, imageUrl: match.awayTeam.crest ?? null },
+    home,
+    away,
+    participants: [home, away],
     homeScore: match.score?.fullTime?.home ?? null,
     awayScore: match.score?.fullTime?.away ?? null,
     provider: FOOTBALL_PROVIDER,
