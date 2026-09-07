@@ -4,6 +4,10 @@ export type EventType = 'match_started' | 'score_change' | 'match_ended' | 'mile
 export type VerificationState = 'verified' | 'unverified' | 'unknown';
 export type NormalizedSportsStatus = 'SCHEDULED' | 'TIMED' | 'IN_PLAY' | 'PAUSED' | 'FINISHED' | 'POSTPONED' | 'SUSPENDED' | 'CANCELLED';
 
+export function isSportSlug(value: string): value is SportSlug {
+  return ['football', 'basketball', 'tennis', 'athletics', 'motorsport'].includes(value);
+}
+
 export interface SportsParticipant {
   id: string;
   name: string;

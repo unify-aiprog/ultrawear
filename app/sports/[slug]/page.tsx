@@ -4,13 +4,14 @@ import { WeekendAction, getWeekendActionEvents } from '@/components/weekend-acti
 import { getCatalogueCompetitions, getCatalogueTeams, getSport } from '@/lib/catalogue';
 import { getSportProgramme } from '@/lib/sports/engine';
 import type { ProgrammeEvent } from '@/lib/sports/programme';
+import { isSportSlug } from '@/lib/sports/types';
 
 export const revalidate = 120;
 
 export default async function SportPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const sport = await getSport(slug);
-  if (!sport) notFound();
+  if (!sport || !isSportSlug(slug)) notFound();
 
   const [competitions, teams, weekendEvents, programme] = await Promise.all([
     getCatalogueCompetitions({ sportId: sport.id }),

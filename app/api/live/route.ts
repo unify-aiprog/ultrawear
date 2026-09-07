@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getStoredProgramme, isProgrammeStale } from '@/lib/sports/engine';
 import { buildSportsProgramme } from '@/lib/sports/programme';
 import { liveExperiences } from '@/lib/sports/simulator';
+import { isSportSlug } from '@/lib/sports/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,22 +35,26 @@ export async function GET() {
 
   const experiences = liveExperiences();
   const programme = buildSportsProgramme(
-    experiences.map((experience) => ({
-      id: experience.event.id,
-      sport: experience.event.sport,
-      startsAt: experience.event.occurredAt,
-      status: experience.event.status === 'live' ? 'IN_PLAY' : 'FINISHED',
-      competition: experience.event.competition,
-      stage: null,
-      home: experience.event.home ? { name: experience.event.home } : undefined,
-      away: experience.event.away ? { name: experience.event.away } : undefined,
-      participants: [],
-      homeScore: experience.event.homeScore,
-      awayScore: experience.event.awayScore,
-      provider: 'UltraWear Demo Simulator',
-      providerId: experience.event.id,
-      updatedAt: experience.event.occurredAt,
-    })),
+    experiences.flatMap((experience) => {
+      const sport = experience.event.sport;
+      if (!isSportSlug(sport)) return [];
+      return [{
+        id: experience.event.id,
+        sport,
+        startsAt: experience.event.occurredAt,
+        status: experience.event.status === 'live' ? 'IN_PLAY' as const : 'FINISHED' as const,
+        competition: experience.event.competition,
+        stage: null,
+        home: experience.event.home ? { id: `${experience.event.id}:home`, name: experience.event.home } : undefined,
+        away: experience.event.away ? { id: `${experience.event.id}:away`, name: experience.event.away } : undefined,
+        participants: [],
+        homeScore: experience.event.homeScore,
+        awayScore: experience.event.awayScore,
+        provider: 'UltraWear Demo Simulator',
+        providerId: experience.event.id,
+        updatedAt: experience.event.occurredAt,
+      }];
+    }),
     'all',
   );
 

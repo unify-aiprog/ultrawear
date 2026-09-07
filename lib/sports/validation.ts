@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SportsEvent } from './types';
+import type { SportsEvent } from './types';
 
 export const sportsEventSchema = z.object({
   id: z.string().min(1), sport: z.enum(['football', 'basketball', 'tennis', 'running', 'other']),

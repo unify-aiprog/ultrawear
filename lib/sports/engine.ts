@@ -9,7 +9,7 @@ const STALE_LIVE_HOURS = 4;
 const PROGRAMME_STALE_MINUTES = 15;
 
 type StoredEventRow = {
-  id: string; sport: string; starts_at: string; status: NormalizedSportsEvent['status']; competition: string; stage: string | null;
+  id: string; sport: SportSlug; starts_at: string; status: NormalizedSportsEvent['status']; competition: string; stage: string | null;
   home: NormalizedSportsEvent['home']; away: NormalizedSportsEvent['away']; participants: NormalizedSportsEvent['participants'];
   home_score: number | null; away_score: number | null; provider: string; provider_id: string; updated_at: string;
 };
