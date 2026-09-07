@@ -85,6 +85,30 @@ test('audience endpoint rejects oversized property sets', async ({ request }) =>
   expect(response.status()).toBe(400);
 });
 
+test('identity endpoint creates a stable server identity', async ({ request }) => {
+  const first = await request.get('/api/identity');
+  expect(first.ok()).toBeTruthy();
+  const firstBody = await first.json();
+  expect(firstBody.ok).toBe(true);
+  expect(firstBody.identity.id).toMatch(/^fan_/);
+
+  const second = await request.get('/api/identity');
+  const secondBody = await second.json();
+  expect(secondBody.identity.id).toBe(firstBody.identity.id);
+});
+
+test('identity endpoint validates profile updates', async ({ request }) => {
+  const response = await request.patch('/api/identity', { data: { displayName: 'Ultra Fan' } });
+  expect(response.ok()).toBeTruthy();
+  const body = await response.json();
+  expect(body.identity.displayName).toBe('Ultra Fan');
+});
+
+test('identity endpoint rejects unknown update fields', async ({ request }) => {
+  const response = await request.patch('/api/identity', { data: { email: 'not-allowed' } });
+  expect(response.status()).toBe(400);
+});
+
 test('weekend sports readiness endpoint is explicit about readiness', async ({ request }) => {
   const response = await request.get('/api/health/sports-action');
   expect([200, 503]).toContain(response.status());
