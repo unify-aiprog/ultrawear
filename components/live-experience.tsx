@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { LiveExperience } from '@/lib/sports/types';
-import { applyParticipation, createFanProgress, FanProgress } from '@/lib/participation/progress';
+import type { LiveExperience as LiveExperienceData } from '@/lib/sports/types';
+import { applyParticipation, createFanProgress, type FanProgress } from '@/lib/participation/progress';
 
-type FeedResponse = { generatedAt: string; experiences: LiveExperience[] };
+type FeedResponse = { generatedAt: string; experiences: LiveExperienceData[] };
 type IdentityResponse = { ok: boolean; identity?: { xp: number; level: number; streak: number; participations: number } };
 
 export function LiveExperience() {
@@ -30,7 +30,7 @@ export function LiveExperience() {
   }, []);
 
   const top = useMemo(() => data?.experiences ?? [], [data]);
-  const participate = async (experience: LiveExperience, actionId: string, kind: 'prediction'|'poll'|'reaction'|'quest', points: number) => {
+  const participate = async (experience: LiveExperienceData, actionId: string, kind: 'prediction'|'poll'|'reaction'|'quest', points: number) => {
     const key = `${experience.event.id}:${actionId}`;
     if (joined[key]) return;
     setJoined((current) => ({ ...current, [key]: true }));
