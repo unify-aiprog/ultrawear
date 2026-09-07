@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { LiveExperience } from '@/lib/sports/types';
-import { applyParticipation, createFanProgress, FanProgress } from '@/lib/participation/progress';
+import { applyParticipation, createFanProgress, type FanProgress } from '@/lib/participation/progress';
 
 type FeedResponse = { generatedAt: string; experiences: LiveExperience[] };
 type IdentityResponse = { ok: boolean; identity?: { xp: number; level: number; streak: number; participations: number } };
