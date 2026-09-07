@@ -60,6 +60,10 @@ export interface SportsProvider {
   getHealth(): Promise<ProviderHealth>;
 }
 
+export function isSportSlug(value: string): value is SportSlug {
+  return ['football', 'basketball', 'tennis', 'athletics', 'motorsport', 'running', 'other'].includes(value);
+}
+
 export interface SportsEvent {
   id: string;
   sport: Sport;
