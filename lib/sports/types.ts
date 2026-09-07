@@ -1,62 +1,36 @@
-export type SportSlug = 'football' | 'tennis' | 'basketball' | 'athletics' | 'motorsport' | (string & {});
+export type Sport = 'football' | 'basketball' | 'tennis' | 'running' | 'other';
+export type EventType = 'match_started' | 'score_change' | 'match_ended' | 'milestone' | 'fixture' | 'story';
+export type VerificationState = 'verified' | 'unverified' | 'unknown';
 
-export type CanonicalSportEventStatus =
-  | 'SCHEDULED'
-  | 'TIMED'
-  | 'IN_PLAY'
-  | 'PAUSED'
-  | 'FINISHED'
-  | 'POSTPONED'
-  | 'SUSPENDED'
-  | 'CANCELLED';
-
-export type SportsEventParticipant = {
+export interface SportsEvent {
   id: string;
-  name: string;
-  imageUrl?: string | null;
-};
-
-export type NormalizedSportsEvent = {
-  id: string;
-  sport: SportSlug;
-  startsAt: string;
-  status: CanonicalSportEventStatus;
+  sport: Sport;
   competition: string;
-  stage?: string | null;
-  home?: SportsEventParticipant | null;
-  away?: SportsEventParticipant | null;
-  participants?: SportsEventParticipant[];
-  homeScore?: number | null;
-  awayScore?: number | null;
-  provider: string;
-  providerId: string;
-  updatedAt?: string | null;
-  significance?: {
-    competitionWeight?: number;
-    stageWeight?: number;
-    rivalryWeight?: number;
-    championshipWeight?: number;
-    athleteWeight?: number;
-    audienceWeight?: number;
-    communityWeight?: number;
-  };
-};
+  home: string;
+  away: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  minute?: number;
+  eventType: EventType;
+  status: 'scheduled' | 'live' | 'finished';
+  occurredAt: string;
+  source: { name: string; url?: string };
+  verification: VerificationState;
+  importance: number;
+  tags: string[];
+}
 
-export type ProviderHealth = {
-  provider: string;
-  sport: SportSlug;
-  status: 'healthy' | 'degraded' | 'down' | 'not_configured';
-  checkedAt: string;
-  lastSuccessAt?: string | null;
-  latencyMs?: number | null;
-  error?: string | null;
-};
+export interface ParticipationAction {
+  id: string;
+  eventId: string;
+  kind: 'prediction' | 'poll' | 'reaction' | 'quest';
+  label: string;
+  points: number;
+  expiresAt?: string;
+}
 
-export type SportsProvider = {
-  name: string;
-  sport: SportSlug;
-  getLiveEvents(): Promise<NormalizedSportsEvent[]>;
-  getUpcomingEvents(from: Date, to: Date): Promise<NormalizedSportsEvent[]>;
-  getRecentEvents(from: Date, to: Date): Promise<NormalizedSportsEvent[]>;
-  getHealth(): Promise<ProviderHealth>;
-};
+export interface LiveExperience {
+  event: SportsEvent;
+  actions: ParticipationAction[];
+  prompt: string;
+}
