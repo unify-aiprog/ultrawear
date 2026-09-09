@@ -14,7 +14,10 @@
     "test:a11y": "playwright test tests/a11y.spec.ts",
     "test:quality": "npm run constitution:check && npm run check && npm run lint",
     "test:weekend": "npm run test:quality && npm run build && npm run test:e2e",
-    "analyze": "ANALYZE=true next build"
+    "analyze": "ANALYZE=true next build",
+    "verify": "nx run ultrawear:verify",
+    "verify:e2e": "nx run ultrawear:verify-e2e",
+    "nx:graph": "nx graph"
   },
   "dependencies": {
     "@liquidglassjs/core": "0.5.0",
@@ -44,6 +47,7 @@
     "@types/react-dom": "^19.1.1",
     "@types/three": "0.169.0",
     "@biomejs/biome": "2.2.4",
+    "nx": "^23.2.0",
     "typescript": "^5.7.2"
   }
 }
