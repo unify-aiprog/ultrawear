@@ -50,7 +50,7 @@ const footballProvider: SportsProvider = {
   },
 };
 
-const unsupportedProvider = (sport: NormalizedSportsEvent['sport']): SportsProvider => ({
+const unsupportedProvider = (sport: Exclude<NormalizedSportsEvent['sport'], 'other'>): SportsProvider => ({
   name: `${sport}:not-configured`,
   sport,
   async getLiveEvents() { return []; },
