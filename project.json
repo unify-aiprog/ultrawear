@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/nx/schemas/project-schema.json",
+  "name": "ultrawear",
+  "projectType": "application",
+  "sourceRoot": ".",
+  "targets": {
+    "verify": {
+      "executor": "nx:run-commands",
+      "options": {
+        "parallel": false,
+        "commands": [
+          "npm run constitution:check",
+          "npm run check",
+          "npm run lint",
+          "npm run build"
+        ]
+      }
+    },
+    "verify-e2e": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["verify"],
+      "options": {
+        "parallel": false,
+        "commands": [
+          "npm run test:e2e",
+          "npm run test:a11y"
+        ]
+      }
+    }
+  }
+}
