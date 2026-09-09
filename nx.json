@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "targetDefaults": {
+    "verify": {
+      "cache": true,
+      "inputs": ["default", "^default"]
+    },
+    "verify-e2e": {
+      "cache": false,
+      "dependsOn": ["verify"]
+    },
+    "build": {
+      "cache": true,
+      "inputs": ["production", "^production"]
+    }
+  },
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "!{projectRoot}/.next/**/*", "!{projectRoot}/node_modules/**/*"],
+    "production": ["default", "!{projectRoot}/**/*.spec.ts", "!{projectRoot}/**/*.spec.tsx", "!{projectRoot}/tests/**/*"]
+  }
+}
