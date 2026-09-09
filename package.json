@@ -17,10 +17,15 @@
     "analyze": "ANALYZE=true next build",
     "verify": "nx run ultrawear:verify",
     "verify:e2e": "nx run ultrawear:verify-e2e",
-    "nx:graph": "nx graph"
+    "nx:graph": "nx graph",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@liquidglassjs/core": "0.5.0",
+    "@opennextjs/cloudflare": "^1.20.6",
     "@paper-design/shaders-react": "0.0.78",
     "@react-three/fiber": "9.7.0",
     "@shadergradient/react": "2.4.20",
@@ -48,6 +53,7 @@
     "@types/three": "0.169.0",
     "@biomejs/biome": "2.2.4",
     "nx": "^23.2.0",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "wrangler": "^4.34.0"
   }
 }
