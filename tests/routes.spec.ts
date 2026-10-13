@@ -89,12 +89,39 @@ test('identity endpoint rejects unknown update fields', async ({ request }) => {
   expect(response.status()).toBe(400);
 });
 
-test('participation endpoint awards progress and rejects malformed records', async ({ request }) => {
-  const response = await request.post('/api/participation', { data: { id: `participation_${Date.now()}`, eventId: 'e2e-event', actionId: 'e2e-action', kind: 'reaction', points: 5 } });
-  expect([201, 503]).toContain(response.status());
-  if (response.status() === 201) expect((await response.json()).identity.xp).toBeGreaterThanOrEqual(5);
-  const invalid = await request.post('/api/participation', { data: { eventId: 'e2e-event', actionId: 'e2e-action', kind: 'invalid', points: 500 } });
-  expect(invalid.status()).toBe(400);
+test('participation endpoint uses server-authoritative rewards and is idempotent', async ({ request }) => {
+  const eventId = `e2e_${Date.now()}`;
+  const payload = { eventId, actionId: 'pulse-live' };
+  const first = await request.post('/api/participation', { data: payload });
+  expect([200, 201, 503]).toContain(first.status());
+  if (first.status() === 503) return; // durable store unavailable; not this test's concern
+  const firstBody = await first.json();
+  expect(firstBody.ok).toBe(true);
+  // Reward is resolved from the server catalog, never from the request body.
+  expect(firstBody.participation.points).toBe(10);
+  expect(firstBody.participation.kind).toBe('reaction');
+
+  const second = await request.post('/api/participation', { data: payload });
+  const secondBody = await second.json();
+  if (first.status() === 201) {
+    expect(secondBody.duplicate).toBe(true);
+    expect(secondBody.identity.xp).toBe(firstBody.identity.xp);
+  } else {
+    // No durable store configured: progression is explicitly preview-only.
+    expect(firstBody.preview).toBe(true);
+  }
+});
+
+test('participation rejects client-supplied reward values', async ({ request }) => {
+  const response = await request.post('/api/participation', { data: { eventId: 'e2e', actionId: 'pulse-live', points: 999, kind: 'quest' } });
+  expect(response.status()).toBe(400);
+});
+
+test('participation rejects unknown actions and malformed payloads', async ({ request }) => {
+  const unknown = await request.post('/api/participation', { data: { eventId: 'e2e', actionId: 'not-a-real-action' } });
+  expect(unknown.status()).toBe(400);
+  const malformed = await request.post('/api/participation', { data: { eventId: '', actionId: 'pulse-live' } });
+  expect(malformed.status()).toBe(400);
 });
 
 test('weekend sports readiness endpoint is explicit about readiness', async ({ request }) => {

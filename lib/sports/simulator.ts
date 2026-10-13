@@ -3,9 +3,9 @@ import type { SportsEvent, LiveExperience, ParticipationAction } from './types';
 const now = Date.now();
 
 export const demoEvents: SportsEvent[] = [
-  { id: 'uw-demo-1', sport: 'football', competition: 'Community Matchday', home: 'Nigeria', away: 'Ghana', homeScore: 1, awayScore: 0, minute: 68, eventType: 'score_change', status: 'live', occurredAt: new Date(now - 45_000).toISOString(), source: { name: 'UltraWear Demo Simulator' }, verification: 'verified', importance: 96, tags: ['live', 'rivalry', 'africa'] },
-  { id: 'uw-demo-2', sport: 'basketball', competition: 'Global Hoops', home: 'Lagos Lions', away: 'Accra Waves', homeScore: 74, awayScore: 71, minute: 31, eventType: 'milestone', status: 'live', occurredAt: new Date(now - 140_000).toISOString(), source: { name: 'UltraWear Demo Simulator' }, verification: 'verified', importance: 84, tags: ['live', 'close-game'] },
-  { id: 'uw-demo-3', sport: 'tennis', competition: 'Community Open', home: 'A. Okafor', away: 'M. Mensah', homeScore: 1, awayScore: 1, eventType: 'milestone', status: 'live', occurredAt: new Date(now - 260_000).toISOString(), source: { name: 'UltraWear Demo Simulator' }, verification: 'verified', importance: 77, tags: ['live', 'tennis'] },
+  { id: 'uw-demo-1', sport: 'football', competition: 'Community Matchday', home: 'Nigeria', away: 'Ghana', homeScore: 1, awayScore: 0, minute: 68, eventType: 'score_change', status: 'live', occurredAt: new Date(now - 45_000).toISOString(), source: { name: 'UltraWear Demo Simulator' }, verification: 'unverified', importance: 96, tags: ['live', 'rivalry', 'africa'] },
+  { id: 'uw-demo-2', sport: 'basketball', competition: 'Global Hoops', home: 'Lagos Lions', away: 'Accra Waves', homeScore: 74, awayScore: 71, minute: 31, eventType: 'milestone', status: 'live', occurredAt: new Date(now - 140_000).toISOString(), source: { name: 'UltraWear Demo Simulator' }, verification: 'unverified', importance: 84, tags: ['live', 'close-game'] },
+  { id: 'uw-demo-3', sport: 'tennis', competition: 'Community Open', home: 'A. Okafor', away: 'M. Mensah', homeScore: 1, awayScore: 1, eventType: 'milestone', status: 'live', occurredAt: new Date(now - 260_000).toISOString(), source: { name: 'UltraWear Demo Simulator' }, verification: 'unverified', importance: 77, tags: ['live', 'tennis'] },
 ];
 
 export function buildExperience(event: SportsEvent): LiveExperience {
