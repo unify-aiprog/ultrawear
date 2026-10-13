@@ -1,4 +1,4 @@
-import { SportsEvent, LiveExperience, ParticipationAction } from './types';
+import type { SportsEvent, LiveExperience, ParticipationAction } from './types';
 
 const now = Date.now();
 

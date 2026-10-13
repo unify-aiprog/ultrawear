@@ -1,4 +1,4 @@
-import type { NormalizedSportsEvent, ProviderHealth, SportsProvider } from '@/lib/sports/types';
+import type { NormalizedSportsEvent, ProviderHealth, SportsProvider, SportSlug } from '@/lib/sports/types';
 import { listMatches } from '@/lib/providers/football-data';
 
 const FOOTBALL_PROVIDER = 'football-data.org';
@@ -50,7 +50,7 @@ const footballProvider: SportsProvider = {
   },
 };
 
-const unsupportedProvider = (sport: NormalizedSportsEvent['sport']): SportsProvider => ({
+const unsupportedProvider = (sport: SportSlug): SportsProvider => ({
   name: `${sport}:not-configured`,
   sport,
   async getLiveEvents() { return []; },

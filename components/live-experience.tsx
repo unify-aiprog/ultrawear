@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { ProgrammeEvent, SportsProgramme } from '@/lib/sports/programme';
-import { applyParticipation, createFanProgress, FanProgress } from '@/lib/participation/progress';
+import { applyParticipation, createFanProgress, type FanProgress } from '@/lib/participation/progress';
 
 type FeedResponse = {
   generatedAt: string;
