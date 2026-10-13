@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function CommunityPage() {
   return (
-    <main className="page-wrap">
+    <div className="page-wrap">
       <section className="page-hero">
         <p className="eyebrow">FOR COMMUNITY</p>
         <h1>Sport is better together.</h1>
@@ -34,6 +34,6 @@ export default function CommunityPage() {
           </article>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
