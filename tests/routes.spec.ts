@@ -89,17 +89,30 @@ test('identity endpoint rejects unknown update fields', async ({ request }) => {
   expect(response.status()).toBe(400);
 });
 
+// Participation is only valid for an event the server currently serves, so tests
+// derive a real active event (and its status-appropriate action) from the live feed.
+async function firstActiveEvent(request: import('@playwright/test').APIRequestContext) {
+  const body = await (await request.get('/api/live')).json();
+  const programme = body?.programme;
+  const event = programme?.now?.[0] ?? programme?.next?.[0] ?? programme?.tonight?.[0] ?? programme?.tomorrow?.[0] ?? programme?.thisWeekend?.[0] ?? programme?.recent?.[0];
+  if (!event) return null;
+  const live = event.status === 'IN_PLAY' || event.status === 'PAUSED';
+  return { id: event.id as string, actionId: live ? 'pulse-live' : 'watch', kind: live ? 'reaction' : 'quest', points: 10, live };
+}
+
 test('participation endpoint uses server-authoritative rewards and is idempotent', async ({ request }) => {
-  const eventId = `e2e_${Date.now()}`;
-  const payload = { eventId, actionId: 'pulse-live' };
+  const event = await firstActiveEvent(request);
+  test.skip(event === null, 'no active event is currently served');
+  if (!event) return;
+  const payload = { eventId: event.id, actionId: event.actionId };
   const first = await request.post('/api/participation', { data: payload });
   expect([200, 201, 503]).toContain(first.status());
   if (first.status() === 503) return; // durable store unavailable; not this test's concern
   const firstBody = await first.json();
   expect(firstBody.ok).toBe(true);
   // Reward is resolved from the server catalog, never from the request body.
-  expect(firstBody.participation.points).toBe(10);
-  expect(firstBody.participation.kind).toBe('reaction');
+  expect(firstBody.participation.points).toBe(event.points);
+  expect(firstBody.participation.kind).toBe(event.kind);
 
   const second = await request.post('/api/participation', { data: payload });
   const secondBody = await second.json();
@@ -113,7 +126,24 @@ test('participation endpoint uses server-authoritative rewards and is idempotent
 });
 
 test('participation rejects client-supplied reward values', async ({ request }) => {
-  const response = await request.post('/api/participation', { data: { eventId: 'e2e', actionId: 'pulse-live', points: 999, kind: 'quest' } });
+  const event = await firstActiveEvent(request);
+  test.skip(event === null, 'no active event is currently served');
+  if (!event) return;
+  const response = await request.post('/api/participation', { data: { eventId: event.id, actionId: event.actionId, points: 999, kind: 'quest' } });
+  expect(response.status()).toBe(400);
+});
+
+test('participation rejects an unknown event', async ({ request }) => {
+  const response = await request.post('/api/participation', { data: { eventId: `not-a-real-event-${Date.now()}`, actionId: 'pulse-live' } });
+  expect(response.status()).toBe(400);
+});
+
+test('participation rejects an action that does not match the event status', async ({ request }) => {
+  const event = await firstActiveEvent(request);
+  test.skip(event === null, 'no active event is currently served');
+  if (!event) return;
+  const mismatched = event.live ? 'watch' : 'pulse-live';
+  const response = await request.post('/api/participation', { data: { eventId: event.id, actionId: mismatched } });
   expect(response.status()).toBe(400);
 });
 

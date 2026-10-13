@@ -23,11 +23,20 @@ export const ACTION_CATALOG: Record<string, ParticipationAction> = {
 const LIVE_ACTION_IDS = ['pulse-live', 'winner', 'quest'];
 const UPCOMING_ACTION_IDS = ['watch', 'prediction', 'pulse'];
 
+function actionIdsFor(status: NormalizedSportsStatus): string[] {
+  return status === 'IN_PLAY' || status === 'PAUSED' ? LIVE_ACTION_IDS : UPCOMING_ACTION_IDS;
+}
+
 export function programmeActions(status: NormalizedSportsStatus): ParticipationAction[] {
-  const ids = status === 'IN_PLAY' || status === 'PAUSED' ? LIVE_ACTION_IDS : UPCOMING_ACTION_IDS;
-  return ids.map((id) => ACTION_CATALOG[id]);
+  return actionIdsFor(status).map((id) => ACTION_CATALOG[id]);
 }
 
 export function lookupAction(actionId: string): ParticipationAction | null {
   return ACTION_CATALOG[actionId] ?? null;
+}
+
+// An action is only valid for the status it is presented under, so a client cannot
+// post a live-only action against an upcoming event (or vice versa).
+export function actionAllowedForStatus(action: ParticipationAction, status: NormalizedSportsStatus): boolean {
+  return actionIdsFor(status).includes(action.actionId);
 }

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerSportsIdentity } from '@/lib/identity/server-identity';
-import { lookupAction } from '@/lib/participation/actions';
+import { actionAllowedForStatus, lookupAction } from '@/lib/participation/actions';
+import { getActiveEvents } from '@/lib/participation/event-catalog';
 import { awardParticipation } from '@/lib/participation/ledger';
 
 export const runtime = 'nodejs';
@@ -23,6 +24,13 @@ export async function POST(request: Request) {
 
   const action = lookupAction(parsed.data.actionId);
   if (!action) return NextResponse.json({ ok: false, error: 'Unknown action' }, { status: 400 });
+
+  // The event must be one the server is currently presenting. Without this a client
+  // could post arbitrary event ids and farm XP one ledger row at a time.
+  const activeEvents = await getActiveEvents();
+  const eventStatus = activeEvents.get(parsed.data.eventId);
+  if (!eventStatus) return NextResponse.json({ ok: false, error: 'Unknown event' }, { status: 400 });
+  if (!actionAllowedForStatus(action, eventStatus)) return NextResponse.json({ ok: false, error: 'Action not available for this event' }, { status: 400 });
 
   const identity = await getServerSportsIdentity();
   const outcome = await awardParticipation({
