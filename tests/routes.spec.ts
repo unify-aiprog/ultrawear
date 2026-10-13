@@ -89,12 +89,69 @@ test('identity endpoint rejects unknown update fields', async ({ request }) => {
   expect(response.status()).toBe(400);
 });
 
-test('participation endpoint awards progress and rejects malformed records', async ({ request }) => {
-  const response = await request.post('/api/participation', { data: { id: `participation_${Date.now()}`, eventId: 'e2e-event', actionId: 'e2e-action', kind: 'reaction', points: 5 } });
-  expect([201, 503]).toContain(response.status());
-  if (response.status() === 201) expect((await response.json()).identity.xp).toBeGreaterThanOrEqual(5);
-  const invalid = await request.post('/api/participation', { data: { eventId: 'e2e-event', actionId: 'e2e-action', kind: 'invalid', points: 500 } });
-  expect(invalid.status()).toBe(400);
+// Participation is only valid for an event the server currently serves, so tests
+// derive a real active event (and its status-appropriate action) from the live feed.
+async function firstActiveEvent(request: import('@playwright/test').APIRequestContext) {
+  const body = await (await request.get('/api/live')).json();
+  const programme = body?.programme;
+  const event = programme?.now?.[0] ?? programme?.next?.[0] ?? programme?.tonight?.[0] ?? programme?.tomorrow?.[0] ?? programme?.thisWeekend?.[0] ?? programme?.recent?.[0];
+  if (!event) return null;
+  const live = event.status === 'IN_PLAY' || event.status === 'PAUSED';
+  return { id: event.id as string, actionId: live ? 'pulse-live' : 'watch', kind: live ? 'reaction' : 'quest', points: 10, live };
+}
+
+test('participation endpoint uses server-authoritative rewards and is idempotent', async ({ request }) => {
+  const event = await firstActiveEvent(request);
+  test.skip(event === null, 'no active event is currently served');
+  if (!event) return;
+  const payload = { eventId: event.id, actionId: event.actionId };
+  const first = await request.post('/api/participation', { data: payload });
+  expect([200, 201, 503]).toContain(first.status());
+  if (first.status() === 503) return; // durable store unavailable; not this test's concern
+  const firstBody = await first.json();
+  expect(firstBody.ok).toBe(true);
+  // Reward is resolved from the server catalog, never from the request body.
+  expect(firstBody.participation.points).toBe(event.points);
+  expect(firstBody.participation.kind).toBe(event.kind);
+
+  const second = await request.post('/api/participation', { data: payload });
+  const secondBody = await second.json();
+  if (first.status() === 201) {
+    expect(secondBody.duplicate).toBe(true);
+    expect(secondBody.identity.xp).toBe(firstBody.identity.xp);
+  } else {
+    // No durable store configured: progression is explicitly preview-only.
+    expect(firstBody.preview).toBe(true);
+  }
+});
+
+test('participation rejects client-supplied reward values', async ({ request }) => {
+  const event = await firstActiveEvent(request);
+  test.skip(event === null, 'no active event is currently served');
+  if (!event) return;
+  const response = await request.post('/api/participation', { data: { eventId: event.id, actionId: event.actionId, points: 999, kind: 'quest' } });
+  expect(response.status()).toBe(400);
+});
+
+test('participation rejects an unknown event', async ({ request }) => {
+  const response = await request.post('/api/participation', { data: { eventId: `not-a-real-event-${Date.now()}`, actionId: 'pulse-live' } });
+  expect(response.status()).toBe(400);
+});
+
+test('participation rejects an action that does not match the event status', async ({ request }) => {
+  const event = await firstActiveEvent(request);
+  test.skip(event === null, 'no active event is currently served');
+  if (!event) return;
+  const mismatched = event.live ? 'watch' : 'pulse-live';
+  const response = await request.post('/api/participation', { data: { eventId: event.id, actionId: mismatched } });
+  expect(response.status()).toBe(400);
+});
+
+test('participation rejects unknown actions and malformed payloads', async ({ request }) => {
+  const unknown = await request.post('/api/participation', { data: { eventId: 'e2e', actionId: 'not-a-real-action' } });
+  expect(unknown.status()).toBe(400);
+  const malformed = await request.post('/api/participation', { data: { eventId: '', actionId: 'pulse-live' } });
+  expect(malformed.status()).toBe(400);
 });
 
 test('weekend sports readiness endpoint is explicit about readiness', async ({ request }) => {

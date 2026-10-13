@@ -1,5 +1,8 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+  "files": {
+    "includes": ["**", "!**/.next", "!**/.open-next", "!**/node_modules"]
+  },
   "formatter": {
     "enabled": false
   },

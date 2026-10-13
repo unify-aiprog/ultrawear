@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function MatchesPage() {
   return (
-    <main className="page-wrap">
+    <div className="page-wrap">
       <section className="page-hero">
         <p className="eyebrow">MATCHDAY</p>
         <h1>The matches that matter.</h1>
@@ -34,6 +34,6 @@ export default function MatchesPage() {
           </article>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

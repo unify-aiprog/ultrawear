@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { ProgrammeEvent, SportsProgramme } from '@/lib/sports/programme';
-import { applyParticipation, createFanProgress, FanProgress } from '@/lib/participation/progress';
+import { programmeActions, type ParticipationAction } from '@/lib/participation/actions';
+import { createFanProgress, type FanProgress } from '@/lib/participation/progress';
 
 type FeedResponse = {
   generatedAt: string;
@@ -11,31 +12,20 @@ type FeedResponse = {
   programme?: SportsProgramme;
 };
 type IdentityResponse = { ok: boolean; identity?: { xp: number; level: number; streak: number; participations: number } };
+type ParticipationResponse = { ok: boolean; duplicate?: boolean; preview?: boolean; identity?: IdentityResponse['identity'] };
 
-type Action = { id: string; kind: 'prediction' | 'poll' | 'reaction' | 'quest'; label: string; points: number };
+type Action = ParticipationAction & { id: string };
+type ParticipationNote = { tone: 'confirmed' | 'preview' | 'error'; message: string };
 
 function actionsFor(event: ProgrammeEvent): Action[] {
-  const live = event.status === 'IN_PLAY' || event.status === 'PAUSED';
-  return live
-    ? [
-        { id: 'pulse', kind: 'reaction', label: 'JOIN THE PULSE', points: 10 },
-        { id: 'winner', kind: 'prediction', label: 'PICK THE WINNER', points: 20 },
-        { id: 'quest', kind: 'quest', label: 'JOIN QUEST', points: 30 },
-      ]
-    : [
-        { id: 'watch', kind: 'quest', label: 'FOLLOW EVENT', points: 10 },
-        { id: 'prediction', kind: 'prediction', label: 'MAKE PREDICTION', points: 20 },
-        { id: 'pulse', kind: 'poll', label: 'JOIN THE PULSE', points: 15 },
-      ];
+  return programmeActions(event.status).map((action) => ({ ...action, id: action.actionId }));
 }
 
 export function LiveExperience() {
   const [data, setData] = useState<FeedResponse | null>(null);
-  const [progress, setProgress] = useState<FanProgress>(() => {
-    if (typeof window === 'undefined') return createFanProgress();
-    try { return JSON.parse(localStorage.getItem('uw-fan-progress') || '') || createFanProgress(); } catch { return createFanProgress(); }
-  });
+  const [progress, setProgress] = useState<FanProgress>(() => createFanProgress());
   const [joined, setJoined] = useState<Record<string, boolean>>({});
+  const [note, setNote] = useState<ParticipationNote | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -71,26 +61,30 @@ export function LiveExperience() {
     const key = `${event.id}:${action.id}`;
     if (joined[key]) return;
     setJoined((current) => ({ ...current, [key]: true }));
+    setNote(null);
     try {
       const response = await fetch('/api/participation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: `${key}:${crypto.randomUUID()}`, eventId: event.id, actionId: action.id, kind: action.kind, points: action.points }),
+        body: JSON.stringify({ eventId: event.id, actionId: action.id }),
       });
-      if (!response.ok) throw new Error('Participation failed');
-      const body = await response.json() as { identity: IdentityResponse['identity'] };
+      const body = await response.json().catch(() => null) as ParticipationResponse | null;
+      if (!response.ok || !body?.ok) throw new Error('Participation not recorded');
       if (body.identity) setProgress((current) => ({ ...current, ...body.identity }));
+      if (body.preview) {
+        setNote({ tone: 'preview', message: 'Preview only — progress is not saved on this device.' });
+      } else if (body.duplicate) {
+        setNote({ tone: 'confirmed', message: 'Already recorded — no extra XP awarded.' });
+      } else {
+        setNote({ tone: 'confirmed', message: `Recorded ✓ +${action.points} XP saved to your fan profile.` });
+      }
     } catch {
-      const next = applyParticipation(progress, {
-        id: `${key}:${Date.now()}`,
-        eventId: event.id,
-        actionId: action.id,
-        kind: action.kind,
-        points: action.points,
-        createdAt: new Date().toISOString(),
+      setJoined((current) => {
+        const next = { ...current };
+        delete next[key];
+        return next;
       });
-      setProgress(next);
-      localStorage.setItem('uw-fan-progress', JSON.stringify(next));
+      setNote({ tone: 'error', message: 'We could not record that participation. Please try again.' });
     }
   };
 
@@ -98,6 +92,17 @@ export function LiveExperience() {
   const headline = data?.programme?.editorial.headline ?? 'THE SPORTS WORLD IS LOADING';
   const sourceState = data?.programme?.sourceHealth;
   const hasProgramme = Boolean(data?.programme);
+  // Live status is only claimed when the programme is trustworthy. Simulated and
+  // stale data are labelled so examples are never mistaken for real fixtures.
+  const simulated = data?.mode === 'simulator-fallback';
+  const stale = data?.mode === 'sports-brain-stale' || Boolean(data?.stale);
+  const statusLabel = simulated
+    ? 'SIMULATED PREVIEW DATA — NOT REAL FIXTURES'
+    : stale
+      ? 'LAST KNOWN DATA — MAY BE STALE'
+      : liveCount
+        ? `${liveCount} LIVE NOW`
+        : 'LIVE PROGRAMME';
 
   return <section className="uw-live-world" aria-labelledby="live-world-title">
     <div className="uw-live-world__head">
@@ -112,9 +117,11 @@ export function LiveExperience() {
     </div>
 
     <p className="uw-live-world__status">
-      <i /> {liveCount ? `${liveCount} LIVE NOW` : 'LIVE PROGRAMME'} · AUTO-REFRESH 15S · {data ? new Date(data.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'CONNECTING'}
+      <i /> {statusLabel} · AUTO-REFRESH 15S · {data ? new Date(data.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'CONNECTING'}
       {sourceState ? ` · ${sourceState.healthy} SOURCES LIVE` : ''}
     </p>
+
+    {note && <output className={`uw-live-world__note uw-live-world__note--${note.tone}`}>{note.message}</output>}
 
     {events.length ? <div className="uw-live-world__grid">{events.map((event) => {
       const actions = actionsFor(event);
@@ -124,7 +131,8 @@ export function LiveExperience() {
         <div className="uw-event__meta"><span>{event.sport.toUpperCase()}</span><span>{event.competition}</span><b>{isLive ? 'LIVE' : event.priority}</b></div>
         <div className="uw-event__teams"><strong>{event.home?.name ?? 'TBC'}</strong><em>{event.homeScore ?? '—'} : {event.awayScore ?? '—'}</em><strong>{event.away?.name ?? 'TBC'}</strong></div>
         <p className="uw-event__prompt">{isLive ? `${event.competition} · LIVE NOW` : `${timeLabel} · ${event.competition}`}</p>
-        <div className="uw-event__actions">{actions.map((action) => { const key = `${event.id}:${action.id}`; return <button key={action.id} disabled={joined[key]} onClick={() => void participate(event, action)}>{joined[key] ? 'JOINED ✓' : `${action.label} +${action.points}XP`}</button>; })}</div>
+        {simulated && <p className="uw-event__source">UNVERIFIED SIMULATED EXAMPLE — NOT A REAL FIXTURE OR RESULT</p>}
+        <div className="uw-event__actions">{actions.map((action) => { const key = `${event.id}:${action.id}`; return <button key={action.id} disabled={joined[key]} onClick={() => void participate(event, action)}>{joined[key] ? 'RECORDED ✓' : `${action.label} +${action.points}XP`}</button>; })}</div>
       </article>;
     })}</div> : <div className="uw-live-world__empty">{hasProgramme ? 'NO VERIFIED EVENTS IN THE CURRENT WINDOW.' : 'CONNECTING TO THE SPORTS WORLD…'}</div>}
   </section>;
