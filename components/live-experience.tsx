@@ -112,7 +112,8 @@ export function LiveExperience() {
     </div>
 
     <p className="uw-live-world__status">
-      <i /> {liveCount ? `${liveCount} LIVE NOW` : 'LIVE PROGRAMME'} · AUTO-REFRESH 15S · {data ? new Date(data.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'CONNECTING'}
+      <i /> {data?.mode === 'simulator-fallback' ? 'SIMULATED PREVIEW DATA — NOT REAL FIXTURES' : data?.mode === 'sports-brain-stale' || data?.stale ? 'LAST KNOWN DATA — MAY BE STALE' : liveCount ? `${liveCount} LIVE NOW` : 'LIVE PROGRAMME'} · AUTO-REFRESH 15S · {data ? new Date(data.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'CONNECTING'}
+      {sourceState ? `${sourceState.healthy} SOURCES LIVE` : ''}
       {sourceState ? ` · ${sourceState.healthy} SOURCES LIVE` : ''}
     </p>
 
