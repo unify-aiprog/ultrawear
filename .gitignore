@@ -5,6 +5,7 @@ node_modules/
 playwright-report/
 test-results/
 coverage/
+tsconfig.tsbuildinfo
 .env
 .env.*
 !.env.example
