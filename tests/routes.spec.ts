@@ -47,6 +47,29 @@ test('Sports Brain health endpoint is explicit about freshness', async ({ reques
   expect(body.checkedAt).toBeTruthy();
 });
 
+test('legacy Sports Brain health endpoint preserves its response contract', async ({ request }) => {
+  const response = await request.get('/api/sports-brain/health');
+  expect([200, 503]).toContain(response.status());
+
+  const body = await response.json();
+  expect(typeof body.ok).toBe('boolean');
+  expect(['unavailable', 'stale', 'degraded', 'healthy']).toContain(body.status);
+  expect(typeof body.persisted).toBe('boolean');
+  expect(typeof body.stale).toBe('boolean');
+  expect(body.updatedAt === null || typeof body.updatedAt === 'string').toBeTruthy();
+  expect(Array.isArray(body.sourceHealth)).toBeTruthy();
+
+  if (response.status() === 503) {
+    expect(body.status).toBe('unavailable');
+    expect(body.persisted).toBe(false);
+    expect(body.stale).toBe(true);
+    expect(body.updatedAt).toBeNull();
+  } else {
+    expect(body.persisted).toBe(true);
+    expect(body.status).not.toBe('unavailable');
+  }
+});
+
 test('Sports Brain refresh endpoint rejects unauthenticated requests', async ({ request }) => {
   const response = await request.post('/api/sports-brain/refresh');
   expect(response.status()).toBe(401);
