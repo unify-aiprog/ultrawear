@@ -22,7 +22,16 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        id: install_dependencies
+        run: npm install --no-audit --no-fund --loglevel verbose
+      - name: Preserve npm diagnostics on install failure
+        if: failure() && steps.install_dependencies.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-install-diagnostics
+          path: ~/.npm/_logs/*.log
+          if-no-files-found: warn
+          retention-days: 7
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: Nx verification gate
