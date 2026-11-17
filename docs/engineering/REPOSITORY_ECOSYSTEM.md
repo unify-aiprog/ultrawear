@@ -122,6 +122,7 @@ The following candidates were screened against UltraWear's current priorities: s
 | [Graphify](https://github.com/Graphify-Labs/graphify) | Queryable graph of source code, docs, SQL schemas, and configuration | **High priority for engineering.** Pilot on the repository to improve architecture discovery and impact analysis. Review generated graph output and hooks before committing. |
 | [RTK — Rust Token Killer](https://github.com/rtk-ai/rtk) | Compresses common CLI output to reduce coding-agent context and cost | **High priority for developer tooling.** Pilot in the developer environment, not the deployed app. Review hooks and pipelines before enabling command rewriting; do not install unreviewed community pipelines. Apache-2.0. |
 | [Ponytail](https://github.com/DietrichGebert/ponytail) | Agent guidance to favour simpler implementations and tests over unnecessary code | **Selective pilot.** Use as a review discipline, not as authority to skip necessary architecture, accessibility, security, or tests. MIT. |
+| [Matt Pocock — Skills for Real Engineers](https://github.com/mattpocock/skills) | Composable engineering workflows for triage, domain modelling, architecture improvement, specs, task graphs, TDD, implementation, code review, and handoffs | **Very high priority for the engineering workflow.** Pilot `diagnosing-bugs`, `domain-modeling`, `tdd`, `code-review`, `to-spec`, and `implement` selectively. Do not run `setup-matt-pocock-skills` wholesale: first reconcile its issue-tracker, labels, and documentation conventions with UltraWear's existing GitHub workflow and specs. MIT-licensed. |
 | [Humanizer](https://github.com/blader/humanizer) | Editorial pass for unnatural or formulaic AI-generated prose | **Selective editorial skill.** Apply only after factual/editorial approval; never change quoted sources, athlete statements, statistics, legal notices, or attributed copy. MIT. |
 
 ### Useful production / operations tools — not platform dependencies
@@ -147,7 +148,7 @@ The following candidates were screened against UltraWear's current priorities: s
 
 ### Recommended execution order
 
-1. **Engineering leverage:** pilot RTK, Graphify, Ponytail, and the relevant Emil/UI UX Pro Max skills in the developer workflow. Keep agent instructions project-scoped and review hooks before enabling them.
+1. **Engineering leverage:** pilot Matt Pocock's diagnosing-bugs, domain-modeling, TDD, and code-review skills alongside RTK, Graphify, Ponytail, and the relevant Emil/UI UX Pro Max skills. Reconcile workflow conventions before enabling setup automation. Keep agent instructions project-scoped and review hooks before enabling them.
 2. **Audience growth:** pilot OpenSEO and selected Corey Haines marketing skills against UltraWear's real content taxonomy, search intent, analytics events, and distribution channels.
 3. **Experience quality:** use Emil's motion/interaction guidance and UI UX Pro Max to review the existing interactive experience, not to replace its architecture.
 4. **Editorial/media operations:** trial Humanizer, Cap, VoiceStudio, or OpenWhispr only against real editorial/production needs and with rights/consent controls.
