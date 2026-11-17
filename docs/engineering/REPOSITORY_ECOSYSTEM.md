@@ -105,3 +105,54 @@ An integration is complete only when the pull request records:
 - operational ownership, rollback path, and update strategy.
 
 A link in this register is not evidence of integration. Only merged, tested code counts as adopted.
+
+
+## G. Newly reviewed repositories and skills — November 2026
+
+The following candidates were screened against UltraWear's current priorities: sports-content operations, global audience acquisition, interactive community, immersive UX, engineering throughput, and safe operation on the existing Cloudflare/Supabase architecture. **These are recommendations, not integrations.**
+
+### Adopt selectively as engineering / agent skills
+
+| Candidate | UltraWear value | Decision / guardrail |
+|---|---|---|
+| [Corey Haines — Marketing Skills](https://github.com/coreyhaines31/marketingskills) | SEO, analytics, growth experiments, conversion, onboarding, retention loops, and marketing planning | **High priority.** Review and add the relevant skill files to the agent workflow. Use for audience growth and community activation; do not blindly automate paid campaigns or publish claims. MIT-licensed. |
+| [UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | Design intelligence and repeatable UI/UX direction across platforms | **High priority.** Use as design-review and implementation guidance; keep UltraWear's own design system and accessibility rules authoritative. MIT-licensed per repository metadata. |
+| [Emil Kowalski — Skills](https://github.com/emilkowalski/skills) | Motion, animation performance, gestures, mobile-native behaviour, interface review | **High priority.** Adopt relevant skills for the immersive, game-like experience; motion must respect reduced-motion preferences and mobile performance. |
+| [Graphify](https://github.com/Graphify-Labs/graphify) | Queryable graph of source code, docs, SQL schemas, and configuration | **High priority for engineering.** Pilot on the repository to improve architecture discovery and impact analysis. Review generated graph output and hooks before committing. |
+| [RTK — Rust Token Killer](https://github.com/rtk-ai/rtk) | Compresses common CLI output to reduce coding-agent context and cost | **High priority for developer tooling.** Pilot in the developer environment, not the deployed app. Review hooks and pipelines before enabling command rewriting; do not install unreviewed community pipelines. Apache-2.0. |
+| [Ponytail](https://github.com/DietrichGebert/ponytail) | Agent guidance to favour simpler implementations and tests over unnecessary code | **Selective pilot.** Use as a review discipline, not as authority to skip necessary architecture, accessibility, security, or tests. MIT. |
+| [Humanizer](https://github.com/blader/humanizer) | Editorial pass for unnatural or formulaic AI-generated prose | **Selective editorial skill.** Apply only after factual/editorial approval; never change quoted sources, athlete statements, statistics, legal notices, or attributed copy. MIT. |
+
+### Useful production / operations tools — not platform dependencies
+
+| Candidate | UltraWear value | Decision / guardrail |
+|---|---|---|
+| [OpenSEO](https://github.com/every-app/open-seo) | Keyword research, rank tracking, competitor gaps, site audits, backlinks, AI-search visibility | **High priority for audience acquisition.** Pilot on the public site. It relies on DataForSEO for data, so budget and review API terms, data handling, and query costs. MIT. |
+| [Cap](https://github.com/CapSoftware/Cap) | Record, edit, caption, and share production walkthroughs, tutorials, partner demos, and creator onboarding | **Useful for the media/operations team.** Evaluate as a production tool; do not embed its app or use it as UltraWear's video platform. Most of the project is AGPLv3, with separately licensed components. |
+| [VoiceStudio](https://github.com/debpalash/VoiceStudio) | Local voice-over, narration, dubbing, transcription, and audio production | **Optional media workflow.** Test with original/authorized voices only. App is AGPL-3.0; model weights, voices, and outputs have separate terms. |
+| [OpenWhispr](https://github.com/OpenWhispr/openwhispr) | Private dictation and meeting transcription for editorial interviews and internal notes | **Optional team productivity tool.** Desktop application, not a web-platform dependency. MIT; review consent and retention before recording interviews. |
+| [Chatwoot](https://github.com/chatwoot/chatwoot) | Omnichannel support inbox, help centre, contact history, campaigns, and support automation | **Later-stage operations candidate.** Consider when member support volume justifies a dedicated team inbox. Do not mistake customer support software for the participatory community product. MIT. |
+| [Cal.diy](https://github.com/calcom/cal.diy) | Scheduling creator interviews, partner calls, and community events | **Low-priority operations candidate.** Its fork removes team/enterprise capabilities; validate integrations and current maintenance before any production deployment. MIT. |
+
+### Reference only, defer, or reject for now
+
+| Candidate | Assessment | Decision |
+|---|---|---|
+| [Open Higgsfield](https://github.com/wide-trace/open-higgsfield) | A studio UI that orchestrates external image/video model APIs; not itself a generation model. The repository page reviewed did not show a licence file. | **Do not copy, fork, or deploy commercially until an explicit licence is supplied.** We can evaluate the workflow conceptually; use licensed media providers for production. |
+| [AppFlowy](https://github.com/AppFlowy-IO/AppFlowy) | Full collaborative workspace / Notion alternative, built with Flutter and Rust; AGPL-3.0. | **Do not integrate into the UltraWear product.** At most evaluate as an internal team wiki; avoid creating a second content/CMS system when UltraWear already has Content Core and its own data model. |
+| [OpenProject](https://github.com/opf/openproject) | Full project and portfolio management platform; GPLv3 and self-hosted operational footprint. | **Defer.** GitHub Issues/Projects and the existing repository workflow are sufficient for current engineering execution. Revisit only if operations require formal portfolio/Gantt planning. |
+| [OpenWhispr](https://github.com/OpenWhispr/openwhispr) | Already listed above as optional desktop dictation. | Do not import its Electron stack into the web app. |
+| [PentAGI](https://github.com/pentagi-oss/pentagi) | The repository currently discoverable under this owner is archived/read-only; autonomous penetration testing is high risk. | **Do not adopt this archived repository.** If autonomous security testing is later needed, select a maintained scanner and run only in isolated, explicitly authorized staging. |
+| [Lemo-Opuscar](https://github.com/search?q=Lemo-Opuscar&type=repositories) | The exact project identity could not be reliably verified from the supplied name. | **Unverified — no adoption.** Need the exact repository URL before review. |
+
+### Recommended execution order
+
+1. **Engineering leverage:** pilot RTK, Graphify, Ponytail, and the relevant Emil/UI UX Pro Max skills in the developer workflow. Keep agent instructions project-scoped and review hooks before enabling them.
+2. **Audience growth:** pilot OpenSEO and selected Corey Haines marketing skills against UltraWear's real content taxonomy, search intent, analytics events, and distribution channels.
+3. **Experience quality:** use Emil's motion/interaction guidance and UI UX Pro Max to review the existing interactive experience, not to replace its architecture.
+4. **Editorial/media operations:** trial Humanizer, Cap, VoiceStudio, or OpenWhispr only against real editorial/production needs and with rights/consent controls.
+5. **Community operations:** revisit Chatwoot and Cal.diy when support and event workflows are established. Keep the member identity, progression, participation, and community experience UltraWear-owned.
+
+### Adoption boundary
+
+No full application from this list should be copied into the UltraWear runtime by default. Prefer small, attributable, license-compatible agent skills and workflow patterns. Production integrations must fit Next.js + Cloudflare OpenNext + Supabase, preserve the existing Content Core and publishing pipeline, and pass the repository's quality and security gates. Licences for AGPL/GPL applications require legal review before any code is incorporated into a proprietary product.
