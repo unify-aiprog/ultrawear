@@ -34,4 +34,22 @@ const blocked = buildResearchPack({
 });
 assert.equal(verifyResearchPack(blocked).status, 'needs_review');
 
+
+const conflicted = buildResearchPack({
+  opportunity: opportunities[0],
+  evidence: [
+    { sourceId: 'source-1', sourceType: 'official', capturedAt: now, confidence: 0.95 },
+    { sourceId: 'source-2', sourceType: 'official', capturedAt: now, confidence: 0.95 },
+  ],
+  claims: [{
+    id: 'claim-3',
+    text: 'The event happened.',
+    evidenceIds: ['source-1'],
+    contradictedBy: ['source-2'],
+  }],
+});
+const conflictResult = verifyResearchPack(conflicted);
+assert.equal(conflictResult.status, 'needs_review');
+assert.deepEqual(conflictResult.conflicts, [{ claimId: 'claim-3', evidenceIds: ['source-2'] }]);
+
 console.log('Content Core intelligence tests passed.');
