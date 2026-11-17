@@ -93,7 +93,7 @@ This register distinguishes repositories that are already part of the UltraWear 
 - **Research candidates:** Free-LLM-API and design-clone candidates; identity and suitability are not yet approved.
 - **New skills and tools evaluated:** see section G. Recommendations remain pilots/reference-only until individually installed, reviewed, and tested; none of these candidates is currently integrated into the UltraWear runtime.
 - **Deferred / conditional:** PostHog, Vercel AI SDK, Vitest, shadcn/ui, Tesseract.js, Chatwoot, Cal.diy, AppFlowy, OpenProject, Cap, VoiceStudio, OpenWhispr.
-- **Not for current adoption:** archived Next.js Subscription Payments starter; archived Cloudflare Flan Scan; archived PentAGI fork under pentagi-oss; Open Higgsfield until a usable licence is supplied.
+- **Not for current adoption:** archived Next.js Subscription Payments starter; archived Cloudflare Flan Scan; archived `pentagi-oss/pentagi` fork; Open Higgsfield until a usable licence is supplied.
 
 ## F. Definition of done for an integration
 
@@ -142,7 +142,7 @@ The following candidates were screened against UltraWear's current priorities: s
 | [Open Higgsfield](https://github.com/wide-trace/open-higgsfield) | A studio UI that orchestrates external image/video model APIs; not itself a generation model. The repository page reviewed did not show a licence file. | **Do not copy, fork, or deploy commercially until an explicit licence is supplied.** We can evaluate the workflow conceptually; use licensed media providers for production. |
 | [AppFlowy](https://github.com/AppFlowy-IO/AppFlowy) | Full collaborative workspace / Notion alternative, built with Flutter and Rust; AGPL-3.0. | **Do not integrate into the UltraWear product.** At most evaluate as an internal team wiki; avoid creating a second content/CMS system when UltraWear already has Content Core and its own data model. |
 | [OpenProject](https://github.com/opf/openproject) | Full project and portfolio management platform; GPLv3 and self-hosted operational footprint. | **Defer.** GitHub Issues/Projects and the existing repository workflow are sufficient for current engineering execution. Revisit only if operations require formal portfolio/Gantt planning. |
-| [PentAGI](https://github.com/pentagi-oss/pentagi) | The repository currently discoverable under this owner is archived/read-only; autonomous penetration testing is high risk. | **Do not adopt this archived repository.** If autonomous security testing is later needed, select a maintained scanner and run only in isolated, explicitly authorized staging. |
+| [PentAGI](https://github.com/vxcontrol/pentagi) | Autonomous AI penetration testing; the official VXControl repository is active and publishes releases. | **Security evaluation only.** Keep it out of the product runtime; use a disposable, isolated staging target that UltraWear owns or is explicitly authorized to test. Human-scope every run and review results. The core is MIT, but the integrated VXControl Cloud SDK has a special AGPL-3.0 licensing exception; review the EULA/NOTICE before use. Do not confuse it with the archived `pentagi-oss/pentagi` fork. |
 | [Lemo-Opuscar](https://github.com/search?q=Lemo-Opuscar&type=repositories) | The exact project identity could not be reliably verified from the supplied name. | **Unverified — no adoption.** Need the exact repository URL before review. |
 
 ### Recommended execution order
