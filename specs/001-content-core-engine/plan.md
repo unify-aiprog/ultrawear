@@ -1,5 +1,13 @@
 # Implementation Plan: UltraWear Content Core Engine
 
+## Existing foundation discovered during repository reconnaissance
+
+The repository already contains a dependency-free JavaScript Content Core under `content-core/`, including `contracts.js`, `pipeline.js`, `fact-firewall.js`, `queue.js`, `publisher.js`, `revisions.js`, `intelligence.js`, `content-production.js`, `ai-provider.js`, tests, and a README. The existing implementation and tests must be characterized before extending or replacing any module. Do not create a parallel `lib/content` implementation.
+
+The current `supabase/schema.sql` already defines a basic `articles` table (`slug`, `title`, `excerpt`, `body`, `category`, `author_name`, image, publication/update timestamps, and draft/published status). The schema also contains canonical sports catalogue/event tables. The first implementation increment must reconcile the existing `articles` contract and the Content Core's in-memory contracts with the actual SQL schema, auth model, and RLS before any new migration. The `supabase/` directory currently exposes SQL schema files rather than a conventional timestamped migrations directory; deployment/migration ownership must be confirmed.
+
+The platform also has a `publishing/` module with article contracts, discovery, entities, sitemap, and tests. Reuse or consolidate these boundaries instead of duplicating publishing functionality.
+
 ## Architecture decisions
 
 1. Keep the content domain inside the existing UltraWear application and data layer; do not create a second CMS service in the first release.
@@ -28,7 +36,7 @@
 
 ## Data model proposal
 
-Confirm existing schema before migrations. Likely entities:
+Confirm existing schema before migrations. The existing `articles` table is the starting point for compatibility analysis, not a reason to create a second article table. Likely entities to add only when justified:
 - `content_stories` — canonical identity, locale, sport, type, lifecycle, slug, timestamps.
 - `content_story_versions` — immutable content revisions and author/model metadata.
 - `content_sources` — source registry, terms/allowance metadata, trust and freshness policy.
