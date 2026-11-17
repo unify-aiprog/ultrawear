@@ -42,6 +42,7 @@ function normalizeClaim(claim) {
     id: String(claim.id),
     text: String(claim.text).trim(),
     evidenceIds: [...new Set((claim.evidenceIds || []).map(String))],
+    contradictedBy: [...new Set((claim.contradictedBy || []).map(String))],
   };
 }
 
